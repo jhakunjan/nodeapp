@@ -1,41 +1,43 @@
-pipelines{
-    agent{node(label:"Agent-1")}
-    stages{
-        stage('Code checkout'){
-            steps{
-                echo "step1"
-            }
-        }
-        stage('Unit test'){
-            steps{
-                echo "step2"
-            }
-        }
-        stage('Integeration test'){
-            steps{
-                echo "step3"
-            }
-        }
-        stage('Sonar code analysis'){
-            steps{
-                echo "step4"
-            }
-        }
-        stage('Sonar quality gates'){
-            steps{
-                echo "step5"
-            }
-        }
-        stage('Build package'){
-            steps{
-                echo "step6"
-            }
-        }
-        stage('Push package to artifacts'){
-            steps{
-                echo "step7"
+pipeline {
+    agent { label 'Agent-1' }
 
+    environment {
+        // Define any environment variables if needed
+        // e.g., SONAR_TOKEN = credentials('sonar-token-id')
+    }
+
+    stages {
+        stage('Code Checkout') {
+            steps {
+                echo '✅ Checking out code...'
+                checkout scm
             }
         }
-    }
-}
+
+        stage('Unit Test') {
+            steps {
+                echo '🧪 Running unit tests...'
+                sh 'npm run test:unit' // Replace with your actual unit test script
+            }
+        }
+
+        stage('Integration Test') {
+            steps {
+                echo '🔁 Running integration tests...'
+                sh 'npm run test:integration' // Replace accordingly
+            }
+        }
+
+        stage('SonarQube Code Analysis') {
+            steps {
+                echo '🔍 Running SonarQube scan...'
+                withSonarQubeEnv('SonarQubeServer') {
+                    sh 'npm run sonar' // Assumes sonar scanner is set up in your project
+                }
+            }
+        }
+
+        stage('SonarQube Quality Gate') {
+            steps {
+                echo '✅ Waiting for SonarQube Quality Gate...'
+                timeout(time: 5, unit: 'MIN
