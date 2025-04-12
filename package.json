@@ -4,7 +4,8 @@
     "description": "A simple Node.js web app without a database",
     "main": "server.js",
     "scripts": {
-        "start": "node server.js"
+        "start": "node server.js",
+        "test": "jest"
     },
     "keywords": [
         "node",

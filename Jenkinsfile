@@ -1,5 +1,6 @@
 pipeline {
     agent { label 'agent-linux' }
+    
     tools{
         nodejs 'NodeJS_20' //ensure this should be configured in jenkins global tools
     }
@@ -14,9 +15,11 @@ pipeline {
         }
 
         stage('Unit Test') {
-            steps {
-                echo '🧪 Running unit tests...'
-                ///sh 'npm run test:unit' // Replace with your actual unit test script
+            steps {                
+                sh 'npm install --save-dev jest supertest'
+                echo ' Running unit tests...'
+                sh 'npm test'
+
             }
         }
 
