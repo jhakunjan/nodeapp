@@ -5,8 +5,10 @@
     "main": "server.js",
     "scripts": {
         "start": "node server.js",
-        "test": "jest"
+        "test": "jest",
+        "coverage": "jest --coverage"
     },
+    
     "keywords": [
         "node",
         "express",

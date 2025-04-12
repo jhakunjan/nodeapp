@@ -19,6 +19,7 @@ pipeline {
                 sh 'npm install --save-dev jest supertest'
                 echo ' Running unit tests...'
                 sh 'npm test'
+                sh 'npm run coverage'
 
             }
         }
