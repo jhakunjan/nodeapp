@@ -23,13 +23,6 @@ pipeline {
             }
         }
 
-        stage('Integration Test') {
-            steps {
-                echo '🔁 Running integration tests...'
-                ///sh 'npm run test:integration' // Replace accordingly
-            }
-        }
-
         stage('SonarQube Code Analysis') {
             steps {
                 echo '🔍 Running SonarQube scan...'
