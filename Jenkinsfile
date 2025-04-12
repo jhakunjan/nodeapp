@@ -3,7 +3,7 @@ pipeline {
     
     tools{
         nodejs 'NodeJS_20' //ensure this should be configured in jenkins global tools
-        sonarQubeScanner 'DefaultScanner'
+        
     }
 
     stages {
