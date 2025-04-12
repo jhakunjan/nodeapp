@@ -7,7 +7,8 @@
         "start": "node server.js",
         "test": "jest",
         "coverage": "jest --coverage",
-        "sonar": "sonar-scanner"
+        "sonar": "sonar-scanner",
+        "build": "mkdir -p dist && cp -r public/* dist/"
     },
     
     "keywords": [
