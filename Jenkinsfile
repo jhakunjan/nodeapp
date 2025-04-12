@@ -29,7 +29,7 @@ pipeline {
             steps {
                 echo 'Running SonarQube scan...'
                 withSonarQubeEnv('SonarQubeServer') {
-                    sh 'sonar-scanner'
+                    sh 'npm run sonar'
                 }
             }
         }
