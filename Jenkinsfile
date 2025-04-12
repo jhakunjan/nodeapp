@@ -1,11 +1,15 @@
 pipeline {
     agent { label 'agent-linux' }
+    tools{
+        nodejs 'NodeJS_20' //ensure this should be configured in jenkins global tools
+    }
 
     stages {
-        stage('Code Checkout') {
+        stage('Setup Node.js Environment') {
             steps {
-                echo '✅ Checking out code...'
-                ///checkout scm
+                echo ' Setting up Node.js on the agent...'
+                sh 'node -v'
+                sh 'npm -v'
             }
         }
 
