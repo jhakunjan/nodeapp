@@ -6,7 +6,8 @@
     "scripts": {
         "start": "node server.js",
         "test": "jest",
-        "coverage": "jest --coverage"
+        "coverage": "jest --coverage",
+        "sonar": "sonar-scanner"
     },
     
     "keywords": [

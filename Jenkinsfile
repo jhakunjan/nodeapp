@@ -3,6 +3,7 @@ pipeline {
     
     tools{
         nodejs 'NodeJS_20' //ensure this should be configured in jenkins global tools
+        sonarQubeScanner 'DefaultScanner'
     }
 
     stages {
@@ -26,19 +27,18 @@ pipeline {
 
         stage('SonarQube Code Analysis') {
             steps {
-                echo '🔍 Running SonarQube scan...'
-                ///withSonarQubeEnv('SonarQubeServer') {
-                ///    sh 'npm run sonar' // Assumes sonar scanner is set up in your project
-                ///}
+                echo 'Running SonarQube scan...'
+                withSonarQubeEnv('SonarQubeServer') {
+                    sh 'sonar-scanner'
+                }
             }
         }
 
         stage('SonarQube Quality Gate') {
             steps {
-                echo '✅ Waiting for SonarQube Quality Gate...'
-                ///timeout(time: 5, unit: 'MINUTES') {
-                ///    waitForQualityGate abortPipeline: true
-                ///}
+                timeout(time: 5, unit: 'MINUTES') {  // Wait for up to 5 minutes
+                    waitForQualityGate abortPipeline: true  // Abort if the quality gate fails
+                }
             }
         }
 
