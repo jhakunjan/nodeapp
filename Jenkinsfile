@@ -40,4 +40,34 @@ pipeline {
         stage('SonarQube Quality Gate') {
             steps {
                 echo '✅ Waiting for SonarQube Quality Gate...'
-                timeout(time: 5, unit: 'MIN
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build Package') {
+            steps {
+                echo '📦 Building the application...'
+                sh 'npm run build' // or any other build command
+            }
+        }
+
+        stage('Push Package to Artifactory') {
+            steps {
+                echo '📤 Pushing package to Artifactory...'
+                // Placeholder for Docker or npm publish or artifact push
+                sh 'echo "Pushed to Artifactory!"'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '🎉 Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed!'
+        }
+    }
+}
