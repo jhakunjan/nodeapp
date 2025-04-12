@@ -27,6 +27,7 @@ pipeline {
 
         stage('SonarQube Code Analysis') {
             steps {
+                sh 'npm install --save-dev sonar-scanner'
                 echo 'Running SonarQube scan...'
                 withSonarQubeEnv('SonarQubeServer') {
                     sh 'npm run sonar'
