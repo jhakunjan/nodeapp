@@ -45,8 +45,8 @@ pipeline {
 
         stage('Build Package') {
             steps {
-                echo '📦 Building the application...'
-                ///sh 'npm run build' // or any other build command
+                echo ' Building the application...'
+                sh 'npm run build' 
             }
         }
 
