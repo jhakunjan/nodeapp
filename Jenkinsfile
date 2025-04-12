@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'Agent-linux' }
+    agent { label 'agent-linux' }
 
     stages {
         stage('Code Checkout') {
