@@ -8,6 +8,10 @@ pipeline {
             description: 'Name of the package artifact to deploy from Artifactory'
         )
     }
+    tools{
+        nodejs 'NodeJS_20' //ensure this should be configured in jenkins global tools
+        
+    }
 
     environment {
         ARTIFACTORY_URL = 'https://trial7fyb86.jfrog.io/artifactory/nodeapp-npm/'
