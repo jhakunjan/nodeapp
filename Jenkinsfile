@@ -6,7 +6,7 @@ pipeline {
         
     }
     environment {
-        ARTIFACTORY_URL = 'https://trial7fyb86.jfrog.io'
+        ARTIFACTORY_URL = 'https://trial7fyb86.jfrog.io/artifactory/nodeapp-npm/'
         ARTIFACTORY_REPO = 'nodeapp-npm'  
     }
 
@@ -57,7 +57,7 @@ pipeline {
 
         stage('Push Package to Artifactory') {
             steps {
-                echo '📤 Uploading artifacts with folder structure using JF_ACCESS_TOKEN...'
+                echo 'Uploading artifacts with folder structure using JF_ACCESS_TOKEN...'
 
                 withCredentials([string(credentialsId: 'JF_ACCESS_TOKEN', variable: 'TOKEN')]) {
                     sh '''
@@ -65,7 +65,7 @@ pipeline {
                             rel_path="${file#dist/}"
                             curl -H "Authorization: Bearer $TOKEN" \
                                  -T "$file" \
-                                 "$ARTIFACTORY_URL/$ARTIFACTORY_REPO/$rel_path"
+                                 "$ARTIFACTORY_URL/$rel_path"
                         done
                     '''
                 }
