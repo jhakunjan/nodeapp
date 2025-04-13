@@ -4,7 +4,7 @@ pipeline {
     parameters {
         string(
             name: 'PACKAGE_NAME',
-            defaultValue: 'node-app-package.tar-0.0.27.gz', // Replace 'LATEST' logic as needed
+            defaultValue: 'node-app-package.tar-0.0.27.gz',
             description: 'Name of the package artifact to deploy from Artifactory'
         )
     }
@@ -24,7 +24,7 @@ pipeline {
                     withCredentials([string(credentialsId: 'JF_ACCESS_TOKEN', variable: 'TOKEN')]) {
                         sh """
                             curl -H "Authorization: Bearer \$TOKEN" \
-                                 -O "\$ARTIFACTORY_URL${params.PACKAGE_NAME}"
+                                 -O "\$ARTIFACTORY_URL/${params.PACKAGE_NAME}"
                         """
                     }
                 }
