@@ -7,7 +7,8 @@ pipeline {
     }
     environment {
         ARTIFACTORY_URL = 'https://trial7fyb86.jfrog.io/artifactory/nodeapp-npm/'
-        ARTIFACTORY_REPO = 'nodeapp-npm'  
+        ARTIFACTORY_REPO = 'nodeapp-npm'
+        PACKAGE_NAME = "node-app-package.tar-0.0.${BUILD_NUMBER}.gz"  
     }
 
     stages {
@@ -49,9 +50,18 @@ pipeline {
 
         stage('Build Package') {
             steps {
-                sh 'npm install'
-                echo ' Building the application...'
-                sh 'npm run build' 
+                sh '''
+                    npm install
+
+                    mkdir -p dist
+                    cp server.js package.json package-lock.json dist/
+                    [ -d views ] && cp -r views dist/
+                    [ -d public ] && cp -r public dist/
+
+                    tar -czf "$PACKAGE_NAME" -C dist .
+                '''
+
+                archiveArtifacts artifacts: "${PACKAGE_NAME}", fingerprint: true 
             }
         }
 
@@ -61,12 +71,10 @@ pipeline {
 
                 withCredentials([string(credentialsId: 'JF_ACCESS_TOKEN', variable: 'TOKEN')]) {
                     sh '''
-                        find dist -type f | while read file; do
-                            rel_path="${file#dist/}"
-                            curl -H "Authorization: Bearer $TOKEN" \
-                                 -T "$file" \
-                                 "$ARTIFACTORY_URL/$rel_path"
-                        done
+                        echo "Uploading $PACKAGE_NAME to Artifactory..."
+                        curl -H "Authorization: Bearer $TOKEN" \
+                             -T "$PACKAGE_NAME" \
+                             "$ARTIFACTORY_URL/$PACKAGE_NAME"
                     '''
                 }
             }
