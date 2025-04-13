@@ -2,9 +2,12 @@ pipeline {
     agent { label 'agent-linux' }
     
     tools{
-        jfrog 'jfrog-cli'
         nodejs 'NodeJS_20' //ensure this should be configured in jenkins global tools
         
+    }
+    environment {
+        ARTIFACTORY_URL = 'https://trial7fyb86.jfrog.io'
+        ARTIFACTORY_REPO = 'nodeapp-npm'  
     }
 
     stages {
@@ -52,15 +55,20 @@ pipeline {
             }
         }
 
-        stage('Publish Build to Artifactory') {
+        stage('Push Package to Artifactory') {
             steps {
-                echo ' Collecting and publishing build info to JFrog Artifactory...'
+                echo '📤 Uploading artifacts with folder structure using JF_ACCESS_TOKEN...'
 
-                
-                sh 'jf rt build-collect-env'
-
-                // Publish build information
-                sh 'jf rt build-publish my-npm-build 1.0.0'
+                withCredentials([string(credentialsId: 'JF_ACCESS_TOKEN', variable: 'TOKEN')]) {
+                    sh '''
+                        find dist -type f | while read file; do
+                            rel_path="${file#dist/}"
+                            curl -H "Authorization: Bearer $TOKEN" \
+                                 -T "$file" \
+                                 "$ARTIFACTORY_URL/$ARTIFACTORY_REPO/$rel_path"
+                        done
+                    '''
+                }
             }
         }       
     }
