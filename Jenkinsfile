@@ -2,6 +2,7 @@ pipeline {
     agent { label 'agent-linux' }
     
     tools{
+        jfrog 'jfrog-cli'
         nodejs 'NodeJS_20' //ensure this should be configured in jenkins global tools
         
     }
@@ -51,21 +52,25 @@ pipeline {
             }
         }
 
-        stage('Push Package to Artifactory') {
+        stage('Publish Build to Artifactory') {
             steps {
-                echo '📤 Pushing package to Artifactory...'
-                // Placeholder for Docker or npm publish or artifact push
-                sh 'echo "Pushed to Artifactory!"'
+                echo ' Collecting and publishing build info to JFrog Artifactory...'
+
+                `
+                sh 'jf rt build-collect-env'
+
+                // Publish build information
+                sh 'jf rt build-publish my-npm-build 1.0.0'
             }
-        }
+        }       
     }
 
     post {
         success {
-            echo '🎉 Pipeline completed successfully!'
+            echo ' Pipeline completed successfully!'
         }
         failure {
-            echo '❌ Pipeline failed!'
+            echo ' Pipeline failed!'
         }
     }
 }
