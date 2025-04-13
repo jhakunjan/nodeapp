@@ -56,7 +56,7 @@ pipeline {
             steps {
                 echo ' Collecting and publishing build info to JFrog Artifactory...'
 
-                `
+                
                 sh 'jf rt build-collect-env'
 
                 // Publish build information
