@@ -5,6 +5,19 @@ pipeline {
         nodejs 'NodeJS_20' //ensure this should be configured in jenkins global tools
         
     }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10', daysToKeepStr: '30'))
+    }
+
+    triggers {
+        // Scheduled builds - Every Wednesday and Friday at 5 PM IST
+        cron('H 11 * * 3,5') 
+
+         
+        githubPush()
+    }
+
     environment {
         ARTIFACTORY_URL = 'https://trial7fyb86.jfrog.io/artifactory/nodeapp-npm/'
         ARTIFACTORY_REPO = 'nodeapp-npm'
