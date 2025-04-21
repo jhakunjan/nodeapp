@@ -11,6 +11,9 @@
         "build": "mkdir -p dist && cp -r public/* dist/"
         
     },
+    "engines": {
+      "node": "20.x"
+    },
     
     "keywords": [
         "node",
