@@ -26,6 +26,11 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'views/404.html'));
 });
 
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something went wrong!');
+});
+
 // Only start server if not being required (i.e., not during test)
 if (require.main === module) {
   app.listen(PORT, () => {
