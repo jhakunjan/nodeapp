@@ -12,8 +12,9 @@ pipeline {
                     # Set the Azure credentials environment variable
                     $env:AZURE_CREDS_JSON = $env:AZURE_CREDS
 
-                    # Login to Azure
-                    & "./login.ps1"
+                    # Use absolute path to the script
+                    $scriptPath = "${env.WORKSPACE}/login.ps1"
+                    & $scriptPath
                 '''
             }
         }
@@ -22,7 +23,8 @@ pipeline {
             steps {
                 pwsh '''
                     # Run the script to list resource groups
-                    & "./list-resource-groups.ps1"
+                    $scriptPath = "${env.WORKSPACE}/list-resource-groups.ps1"
+                    & $scriptPath
                 '''
             }
         }
