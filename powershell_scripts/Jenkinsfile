@@ -5,7 +5,22 @@ pipeline {
         AZURE_CREDS = credentials('AZURE_CREDENTIALS')
     }
 
-    stages {        
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Checkout the repository to make sure the .ps1 scripts are available
+                checkout scm
+            }
+        }
+
+        stage('Print Workspace') {
+            steps {
+                pwsh '''
+                    # Print the value of the WORKSPACE environment variable
+                    Write-Host "WORKSPACE: $env:WORKSPACE"
+                '''
+            }
+        }
 
         stage('Login to Azure') {
             steps {
@@ -14,11 +29,16 @@ pipeline {
                     $env:AZURE_CREDS_JSON = $env:AZURE_CREDS
 
                     # Use absolute path to the script
-                    Write-Host $env:WORKSPACE
-
-                
                     $scriptPath = "${env.WORKSPACE}/powershell_scripts/login.ps1"
-                    & $scriptPath
+
+                    # Check if the script exists
+                    if (Test-Path $scriptPath) {
+                        Write-Host "Found login.ps1 at: $scriptPath"
+                        & $scriptPath
+                    } else {
+                        Write-Host "login.ps1 not found at: $scriptPath"
+                        exit 1
+                    }
                 '''
             }
         }
@@ -28,7 +48,15 @@ pipeline {
                 pwsh '''
                     # Run the script to list resource groups
                     $scriptPath = "${env.WORKSPACE}/powershell_scripts/list-resource-groups.ps1"
-                    & $scriptPath
+                    
+                    # Check if the script exists
+                    if (Test-Path $scriptPath) {
+                        Write-Host "Found list-resource-groups.ps1 at: $scriptPath"
+                        & $scriptPath
+                    } else {
+                        Write-Host "list-resource-groups.ps1 not found at: $scriptPath"
+                        exit 1
+                    }
                 '''
             }
         }
