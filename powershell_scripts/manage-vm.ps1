@@ -33,7 +33,7 @@ function Get-VMStatus {
     )
 
     $vm = Get-AzVM -ResourceGroupName $resourceGroupName -Name $vmName
-    Write-Host "VM Status for $vmName in Resource Group $resourceGroupName: ${($vm.PowerState)}"
+    Write-Host "VM Status for $vmName in Resource Group $resourceGroupName: $($vm.PowerState)"
 }
 
 # Check the action and perform the respective task

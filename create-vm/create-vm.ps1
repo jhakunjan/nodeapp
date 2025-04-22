@@ -1,12 +1,11 @@
-param(
-    [string]$vmName,
-    [string]$vmSize,
-    [string]$adminUsername,
-    [string]$adminPassword,
-    [string]$resourceGroupName,
-    [string]$location,
-    [string]$vmImage
-)
+$vmName = $env:VM_NAME
+$vmSize = $env:VM_SIZE
+$adminUsername = $env:ADMIN_USERNAME
+$adminPassword = $env:ADMIN_PASSWORD
+$resourceGroupName = $env:RESOURCE_GROUP
+$location = $env:LOCATION
+$vmImage = $env:VM_IMAGE
+
 
 # Initialize a flag for missing parameters
 $missingParams = @()

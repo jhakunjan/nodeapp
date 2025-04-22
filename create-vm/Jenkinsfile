@@ -21,6 +21,20 @@ pipeline {
                 checkout scm
             }
         }
+        stage('Set Environment Variables') {
+            steps {
+                script {
+                    // Store parameters in environment variables
+                    env.VM_NAME = "${params.VM_NAME}"
+                    env.VM_SIZE = "${params.VM_SIZE}"
+                    env.ADMIN_USERNAME = "${params.ADMIN_USERNAME}"
+                    env.ADMIN_PASSWORD = "${params.ADMIN_PASSWORD}"
+                    env.RESOURCE_GROUP = "${params.RESOURCE_GROUP}"
+                    env.LOCATION = "${params.LOCATION}"
+                    env.VM_IMAGE = "${params.VM_IMAGE}"
+                }
+            }
+        }
 
         stage('Login to Azure') {
             steps {
@@ -46,14 +60,23 @@ pipeline {
         stage('Create VM') {
             steps {
                 pwsh '''
-                    # Define the parameters from Jenkins environment
-                    $vmName = "${params.VM_NAME}"
-                    $vmSize = "${params.VM_SIZE}"
-                    $adminUsername = "${params.ADMIN_USERNAME}"
-                    $adminPassword = "${params.ADMIN_PASSWORD}"
-                    $resourceGroupName = "${params.RESOURCE_GROUP}"
-                    $location = "${params.LOCATION}"
-                    $vmImage = "${params.VM_IMAGE}"
+                    # Access environment variables and ensure they are set
+                    $vmName = $env:VM_NAME
+                    $vmSize = $env:VM_SIZE
+                    $adminUsername = $env:ADMIN_USERNAME
+                    $adminPassword = $env:ADMIN_PASSWORD
+                    $resourceGroupName = $env:RESOURCE_GROUP
+                    $location = $env:LOCATION
+                    $vmImage = $env:VM_IMAGE
+
+                    # Check if all required parameters are not null or empty
+                    if ([string]::IsNullOrEmpty($vmName) -or [string]::IsNullOrEmpty($vmSize) `
+                        -or [string]::IsNullOrEmpty($adminUsername) -or [string]::IsNullOrEmpty($adminPassword) `
+                        -or [string]::IsNullOrEmpty($resourceGroupName) -or [string]::IsNullOrEmpty($location) `
+                        -or [string]::IsNullOrEmpty($vmImage)) {
+                        Write-Host "Error: One or more parameters are missing"
+                        exit 1
+                    }
 
                     # Path to the PowerShell script for VM creation
                     $scriptPath = "${env.WORKSPACE}create-vm/create-vm.ps1"
@@ -61,6 +84,7 @@ pipeline {
                     # Check if the script exists
                     if (Test-Path $scriptPath) {
                         Write-Host "Found create-vm.ps1 at: $scriptPath"
+                        # Pass the parameters to the script
                         & $scriptPath -vmName $vmName -vmSize $vmSize -adminUsername $adminUsername `
                             -adminPassword $adminPassword -resourceGroupName $resourceGroupName `
                             -location $location -vmImage $vmImage
