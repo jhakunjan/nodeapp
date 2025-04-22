@@ -14,6 +14,8 @@ pipeline {
                     $env:AZURE_CREDS_JSON = $env:AZURE_CREDS
 
                     # Use absolute path to the script
+                    Write-Host $env:WORKSPACE
+
                 
                     $scriptPath = "${env.WORKSPACE}/powershell_scripts/login.ps1"
                     & $scriptPath
