@@ -36,7 +36,7 @@ if (-not $publicIp) {
         -AllocationMethod Dynamic
 }
 
-# 3) Create or reuse NIC (no prompt)
+# 3) Create or reuse NIC
 $nic = Get-AzNetworkInterface -Name $nicName -ResourceGroupName $resourceGroupName -ErrorAction SilentlyContinue
 if (-not $nic) {
     Write-Host "Creating NIC: $nicName"
@@ -50,28 +50,46 @@ if (-not $nic) {
     Write-Host "Reusing existing NIC: $nicName"
 }
 
-# 4) Build VM configuration
-$cred = New-Object System.Management.Automation.PSCredential($adminUsername, $securePassword)
-$vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize
-
-# 5) Apply image
+# 4) Build VM configuration & set image
 $parts = $vmImage -split ":"
+$publisher = $parts[0]
+$offer     = $parts[1]
+$sku       = $parts[2]
+$version   = $parts[3]
+
+$vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize
 $vmConfig = Set-AzVMSourceImage `
     -VM $vmConfig `
-    -PublisherName $parts[0] -Offer $parts[1] -Sku $parts[2] -Version $parts[3]
+    -PublisherName $publisher `
+    -Offer $offer `
+    -Sku $sku `
+    -Version $version
 
-# 6) Enable Windows OS + cred + agent
-$vmConfig = Set-AzVMOperatingSystem `
-    -VM $vmConfig `
-    -Windows `
-    -ComputerName $vmName `
-    -Credential $cred `
-    -ProvisionVMAgent
+# 5) OS-specific configuration
+$cred = New-Object System.Management.Automation.PSCredential($adminUsername, $securePassword)
 
-# 7) Attach NIC
+if ($publisher -match 'Windows') {
+    Write-Host "Configuring Windows profile"
+    $vmConfig = Set-AzVMOperatingSystem `
+        -VM $vmConfig `
+        -Windows `
+        -ComputerName $vmName `
+        -Credential $cred `
+        -ProvisionVMAgent
+} else {
+    Write-Host "Configuring Linux profile"
+    $vmConfig = Set-AzVMOperatingSystem `
+        -VM $vmConfig `
+        -Linux `
+        -ComputerName $vmName `
+        -Credential $cred `
+        -DisablePasswordAuthentication:$false
+}
+
+# 6) Attach NIC
 $vmConfig = Add-AzVMNetworkInterface -VM $vmConfig -Id $nic.Id
 
-# 8) Create the VM
+# 7) Create the VM
 New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig
 
 Write-Host "✅ Azure virtual machine '$vmName' creation initiated."
