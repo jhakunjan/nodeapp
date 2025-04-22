@@ -1,0 +1,34 @@
+pipeline {
+    agent { label 'agent-linux' }
+
+    environment {
+        AZURE_CREDS = credentials('AZURE_CREDENTIALS') 
+    }
+
+    stages {
+        stage('Login to Azure') {
+            steps {
+                powershell '''
+                    $creds = $env:AZURE_CREDS | ConvertFrom-Json
+                    $securePassword = ConvertTo-SecureString $creds.clientSecret -AsPlainText -Force
+                    $credential = New-Object System.Management.Automation.PSCredential($creds.clientId, $securePassword)
+
+                    Connect-AzAccount -ServicePrincipal `
+                        -TenantId $creds.tenantId `
+                        -Credential $credential
+
+                    Set-AzContext -SubscriptionId $creds.subscriptionId
+                '''
+            }
+        }
+
+        stage('Run Azure PowerShell') {
+            steps {
+                powershell '''
+                    # Example Azure command
+                    Get-AzVM | Select Name, ResourceGroupName, Location, PowerState
+                '''
+            }
+        }
+    }
+}
