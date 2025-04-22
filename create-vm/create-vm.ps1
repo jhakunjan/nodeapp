@@ -8,13 +8,31 @@ param(
     [string]$vmImage
 )
 
-# Ensure the necessary parameters are passed and not empty
-if ([string]::IsNullOrEmpty($vmName) -or [string]::IsNullOrEmpty($vmSize) -or [string]::IsNullOrEmpty($adminUsername) `
-    -or [string]::IsNullOrEmpty($adminPassword) -or [string]::IsNullOrEmpty($resourceGroupName) `
-    -or [string]::IsNullOrEmpty($location) -or [string]::IsNullOrEmpty($vmImage)) {
-    Write-Host "Error: One or more required parameters are missing!"
+# Initialize a flag for missing parameters
+$missingParams = @()
+
+# Check for missing parameters and store the missing ones
+if ([string]::IsNullOrEmpty($vmName)) { $missingParams += "vmName" }
+if ([string]::IsNullOrEmpty($vmSize)) { $missingParams += "vmSize" }
+if ([string]::IsNullOrEmpty($adminUsername)) { $missingParams += "adminUsername" }
+if ([string]::IsNullOrEmpty($adminPassword)) { $missingParams += "adminPassword" }
+if ([string]::IsNullOrEmpty($resourceGroupName)) { $missingParams += "resourceGroupName" }
+if ([string]::IsNullOrEmpty($location)) { $missingParams += "location" }
+if ([string]::IsNullOrEmpty($vmImage)) { $missingParams += "vmImage" }
+
+# If there are any missing parameters, output them and exit
+if ($missingParams.Count -gt 0) {
+    Write-Host "Error: The following parameters are missing: $($missingParams -join ', ')"
     exit 1
 }
+
+Write-Host "Creating VM with the following parameters:"
+Write-Host "VM Name: $vmName"
+Write-Host "VM Size: $vmSize"
+Write-Host "Admin Username: $adminUsername"
+Write-Host "Resource Group: $resourceGroupName"
+Write-Host "Location: $location"
+Write-Host "VM Image: $vmImage"
 
 # Create a new VM configuration
 $vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize
