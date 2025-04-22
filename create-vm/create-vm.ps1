@@ -7,87 +7,99 @@ $location = $env:LOCATION
 $vmImage = $env:VM_IMAGE
 $securePassword = ConvertTo-SecureString $adminPassword -AsPlainText -Force
 
+# Parse the image string
+$imageParts = $vmImage -split ":"
+$publisher = $imageParts[0]
+$offer     = $imageParts[1]
+$sku       = $imageParts[2]
+$version   = $imageParts[3]
 
-# Initialize a flag for missing parameters
-$missingParams = @()
+# Names for NIC and Public IP
+$nicName      = "$vmName-nic"
+$publicIpName = "$vmName-pip"
+$vnetName     = "virtual-nw-dev"    # replace with your VNet name
+$subnetName   = "subnet-frontend"   # replace with your Subnet name
 
-# Check for missing parameters and store the missing ones
-if ([string]::IsNullOrEmpty($vmName)) { $missingParams += "vmName" }
-if ([string]::IsNullOrEmpty($vmSize)) { $missingParams += "vmSize" }
-if ([string]::IsNullOrEmpty($adminUsername)) { $missingParams += "adminUsername" }
-if ([string]::IsNullOrEmpty($adminPassword)) { $missingParams += "adminPassword" }
-if ([string]::IsNullOrEmpty($resourceGroupName)) { $missingParams += "resourceGroupName" }
-if ([string]::IsNullOrEmpty($location)) { $missingParams += "location" }
-if ([string]::IsNullOrEmpty($vmImage)) { $missingParams += "vmImage" }
-
-# If there are any missing parameters, output them and exit
-if ($missingParams.Count -gt 0) {
-    Write-Host "Error: The following parameters are missing: $($missingParams -join ', ')"
+# 1) Validate VNet
+try {
+    $vnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName -ErrorAction Stop
+} catch {
+    Write-Error "Virtual network '$vnetName' not found in RG '$resourceGroupName'"
     exit 1
 }
 
-Write-Host "Creating VM with the following parameters:"
-Write-Host "VM Name: $vmName"
-Write-Host "VM Size: $vmSize"
-Write-Host "Admin Username: $adminUsername"
-Write-Host "Resource Group: $resourceGroupName"
-Write-Host "Location: $location"
-Write-Host "VM Image: $vmImage"
-$parts = $vmImage -split ":"
-$publisher = $parts[0]
-$offer     = $parts[1]
-$sku       = $parts[2]
-$version   = $parts[3]
+# 2) Validate Subnet
+$subnet = $vnet.Subnets | Where-Object Name -EQ $subnetName
+if (-not $subnet) {
+    Write-Error "Subnet '$subnetName' not found in VNet '$vnetName'"
+    exit 1
+}
 
-# 3) NIC + Public IP names
-$nicName      = "$vmName-nic"
-$publicIpName = "$vmName-pip"
-$vnetName     = "virtual-nw-dev"    # replace with your VNet
-$subnetName   = "subnet-frontend"   # replace with your Subnet
+# 3) Create or get Public IP (Basic SKU, Dynamic)
+try {
+    $publicIp = New-AzPublicIpAddress `
+        -Name $publicIpName `
+        -ResourceGroupName $resourceGroupName `
+        -Location $location `
+        -Sku Basic `
+        -AllocationMethod Dynamic `
+        -ErrorAction Stop
+} catch {
+    Write-Error "Failed to create Public IP '$publicIpName': $_"
+    exit 1
+}
 
-# 4) Get existing VNet & Subnet
-$vnet   = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName
-$subnet = Get-AzVirtualNetworkSubnetConfig -Name $subnetName -VirtualNetwork $vnet
+if (-not $publicIp.Id) {
+    Write-Error "Public IP Id is null"
+    exit 1
+}
 
-# 5) Create a Basic SKU Public IP with Dynamic allocation
-$publicIp = New-AzPublicIpAddress `
-  -Name $publicIpName `
-  -ResourceGroupName $resourceGroupName `
-  -Location $location `
-  -Sku Basic `
-  -AllocationMethod Dynamic
+# 4) Create NIC
+try {
+    $nic = New-AzNetworkInterface `
+        -Name $nicName `
+        -ResourceGroupName $resourceGroupName `
+        -Location $location `
+        -SubnetId $subnet.Id `
+        -PublicIpAddressId $publicIp.Id `
+        -ErrorAction Stop
+} catch {
+    Write-Error "Failed to create NIC '$nicName': $_"
+    exit 1
+}
 
-# 6) Create the NIC, referencing the Public IP’s Id
-$nic = New-AzNetworkInterface `
-  -Name $nicName `
-  -ResourceGroupName $resourceGroupName `
-  -Location $location `
-  -SubnetId $subnet.Id `
-  -PublicIpAddressId $publicIp.Id
+if (-not $nic.Id) {
+    Write-Error "NIC Id is null"
+    exit 1
+}
 
-# 7) Build the VM configuration
+# 5) Build VM config
 $vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize
 
-# 8) Apply the Marketplace image first
+# 6) Set Marketplace image first
 $vmConfig = Set-AzVMSourceImage `
-  -VM $vmConfig `
-  -PublisherName $publisher `
-  -Offer $offer `
-  -Sku $sku `
-  -Version $version
+    -VM $vmConfig `
+    -PublisherName $publisher `
+    -Offer $offer `
+    -Sku $sku `
+    -Version $version
 
-# 9) Enable Linux OS + password auth
+# 7) Enable Linux OS + password auth
 $vmConfig = Set-AzVMOperatingSystem `
-  -VM $vmConfig `
-  -Linux `
-  -ComputerName $vmName `
-  -Credential (New-Object System.Management.Automation.PSCredential($adminUsername, $securePassword)) `
-  -DisablePasswordAuthentication:$false
+    -VM $vmConfig `
+    -Linux `
+    -ComputerName $vmName `
+    -Credential (New-Object PSCredential($adminUsername, $securePassword)) `
+    -DisablePasswordAuthentication:$false
 
-# 10) Attach the NIC by its Id
+# 8) Attach the NIC
 $vmConfig = Add-AzVMNetworkInterface -VM $vmConfig -Id $nic.Id
 
-# 11) Create the VM
-New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig
-
-Write-Host "VM creation initiated: $vmName"
+# 9) Create the VM
+try {
+    New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig -ErrorAction Stop
+    Write-Host "✅ VM creation initiated: $vmName"
+} catch {
+    Write-Error "Failed to create VM '$vmName': $_"
+    exit 1
+}
