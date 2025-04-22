@@ -33,41 +33,61 @@ Write-Host "Admin Username: $adminUsername"
 Write-Host "Resource Group: $resourceGroupName"
 Write-Host "Location: $location"
 Write-Host "VM Image: $vmImage"
-$nicName = "$vmName-nic"
-$publicIpName = "$vmName-pip"
-$vnetName = "virtual-nw-dev"
-$subnetName = "subnet-frontend" 
+$parts = $vmImage -split ":"
+$publisher = $parts[0]
+$offer     = $parts[1]
+$sku       = $parts[2]
+$version   = $parts[3]
 
-# Get existing VNet and Subnet
-$vnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName
+# 3) NIC + Public IP names
+$nicName      = "$vmName-nic"
+$publicIpName = "$vmName-pip"
+$vnetName     = "virtual-nw-dev"    # replace with your VNet
+$subnetName   = "subnet-frontend"   # replace with your Subnet
+
+# 4) Get existing VNet & Subnet
+$vnet   = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName
 $subnet = Get-AzVirtualNetworkSubnetConfig -Name $subnetName -VirtualNetwork $vnet
 
-# Create Public IP
-$publicIp = New-AzPublicIpAddress -Name $publicIpName -ResourceGroupName $resourceGroupName `
-    -Location $location -AllocationMethod Dynamic
+# 5) Create a Basic SKU Public IP with Dynamic allocation
+$publicIp = New-AzPublicIpAddress `
+  -Name $publicIpName `
+  -ResourceGroupName $resourceGroupName `
+  -Location $location `
+  -Sku Basic `
+  -AllocationMethod Dynamic
 
-# Create NIC
-$nic = New-AzNetworkInterface -Name $nicName -ResourceGroupName $resourceGroupName `
-    -Location $location -SubnetId $subnet.Id -PublicIpAddressId $publicIp.Id    
+# 6) Create the NIC, referencing the Public IP’s Id
+$nic = New-AzNetworkInterface `
+  -Name $nicName `
+  -ResourceGroupName $resourceGroupName `
+  -Location $location `
+  -SubnetId $subnet.Id `
+  -PublicIpAddressId $publicIp.Id
 
-# Create a new VM configuration
+# 7) Build the VM configuration
 $vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize
 
-$vmConfig = Set-AzVMSourceImage -VM $vmConfig -PublisherName ( ($vmImage -split ":")[0] ) `
-    -Offer ( ($vmImage -split ":")[1] ) -Sku ( ($vmImage -split ":")[2] ) `
-    -Version ( ($vmImage -split ":")[3] )
+# 8) Apply the Marketplace image first
+$vmConfig = Set-AzVMSourceImage `
+  -VM $vmConfig `
+  -PublisherName $publisher `
+  -Offer $offer `
+  -Sku $sku `
+  -Version $version
 
-# Set the operating system of the VM (using the image provided)
-$vmConfig = Set-AzVMOperatingSystem -VM $vmConfig -Linux -ComputerName $vmName `
-    -Credential (New-Object System.Management.Automation.PSCredential($adminUsername, $securePassword)) `
-    -DisablePasswordAuthentication $false
+# 9) Enable Linux OS + password auth
+$vmConfig = Set-AzVMOperatingSystem `
+  -VM $vmConfig `
+  -Linux `
+  -ComputerName $vmName `
+  -Credential (New-Object System.Management.Automation.PSCredential($adminUsername, $securePassword)) `
+  -DisablePasswordAuthentication:$false
 
-# Set the image for the VM (provided in the parameters)
+# 10) Attach the NIC by its Id
+$vmConfig = Add-AzVMNetworkInterface -VM $vmConfig -Id $nic.Id
 
-#  Attach the NIC to the VM
-$vmConfig = Add-AzVMNetworkInterface -VM $vmConfig -Id $nic
-
-# Create the VM
+# 11) Create the VM
 New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig
 
 Write-Host "VM creation initiated: $vmName"
