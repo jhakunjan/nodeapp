@@ -5,6 +5,7 @@ $adminPassword = $env:ADMIN_PASSWORD
 $resourceGroupName = $env:RESOURCE_GROUP
 $location = $env:LOCATION
 $vmImage = $env:VM_IMAGE
+$securePassword = ConvertTo-SecureString $adminPassword -AsPlainText -Force
 
 
 # Initialize a flag for missing parameters
@@ -38,7 +39,7 @@ $vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize
 
 # Set the operating system of the VM (using the image provided)
 $vmConfig = Set-AzVMOperatingSystem -VM $vmConfig -Linux -ComputerName $vmName `
-    -Credential (New-Object System.Management.Automation.PSCredential($adminUsername, $adminPassword)) `
+    -Credential (New-Object System.Management.Automation.PSCredential($adminUsername, $securePassword)) `
     -DisablePasswordAuthentication $false
 
 # Set the image for the VM (provided in the parameters)
