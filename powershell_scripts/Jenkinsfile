@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Login to Azure') {
             steps {
-                powershell '''
+                pwsh '''
                     $creds = $env:AZURE_CREDS | ConvertFrom-Json
                     $securePassword = ConvertTo-SecureString $creds.clientSecret -AsPlainText -Force
                     $credential = New-Object System.Management.Automation.PSCredential($creds.clientId, $securePassword)
