@@ -9,15 +9,21 @@ pipeline {
         stage('Login to Azure') {
             steps {
                 pwsh '''
-                    $env:AZURE_CREDENTIALS_JSON = $env:AZURE_CREDS
-                    ./login.ps1
+                    # Set the Azure credentials environment variable
+                    $env:AZURE_CREDS_JSON = $env:AZURE_CREDS
+
+                    # Login to Azure
+                    & "./login.ps1"
                 '''
             }
         }
 
         stage('Run Azure PowerShell') {
             steps {
-                pwsh './list-resource-groups.ps1'
+                pwsh '''
+                    # Run the script to list resource groups
+                    & "./list-resource-groups.ps1"
+                '''
             }
         }
     }
