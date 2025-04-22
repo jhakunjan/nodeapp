@@ -2,32 +2,22 @@ pipeline {
     agent { label 'agent-linux' }
 
     environment {
-        AZURE_CREDS = credentials('AZURE_CREDENTIALS') 
+        AZURE_CREDS = credentials('AZURE_CREDENTIALS')
     }
 
     stages {
         stage('Login to Azure') {
             steps {
                 pwsh '''
-                    $creds = $env:AZURE_CREDS | ConvertFrom-Json
-                    $securePassword = ConvertTo-SecureString $creds.clientSecret -AsPlainText -Force
-                    $credential = New-Object System.Management.Automation.PSCredential($creds.clientId, $securePassword)
-
-                    Connect-AzAccount -ServicePrincipal `
-                        -TenantId $creds.tenantId `
-                        -Credential $credential
-
-                    Set-AzContext -SubscriptionId $creds.subscriptionId
+                    $env:AZURE_CREDENTIALS_JSON = $env:AZURE_CREDS
+                    ./powershell/login.ps1
                 '''
             }
         }
 
         stage('Run Azure PowerShell') {
             steps {
-                pwsh '''
-                    # Example Azure command
-                    Get-AzResourceGroup | Select-Object ResourceGroupName, Location | Format-Table -AutoSize
-                '''
+                pwsh './powershell/list-resource-groups.ps1'
             }
         }
     }
