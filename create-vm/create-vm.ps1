@@ -21,8 +21,8 @@ if (!(Get-AzResourceGroup -Name $resourceGroupName)) {
 }
 
 
-$subnet = "virtual-nw-dev"
-$vnet =  "subnet-frontend"
+$subnet = "subnet-frontend"
+$vnet =  "virtual-nw-dev"
 
 # Create a public IP address
 $publicIp = New-AzPublicIpAddress -ResourceGroupName $resourceGroupName -Location $location -Name myPublicIP -AllocationMethod Dynamic
