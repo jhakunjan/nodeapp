@@ -8,6 +8,14 @@ param(
     [string]$vmImage
 )
 
+# Ensure the necessary parameters are passed and not empty
+if ([string]::IsNullOrEmpty($vmName) -or [string]::IsNullOrEmpty($vmSize) -or [string]::IsNullOrEmpty($adminUsername) `
+    -or [string]::IsNullOrEmpty($adminPassword) -or [string]::IsNullOrEmpty($resourceGroupName) `
+    -or [string]::IsNullOrEmpty($location) -or [string]::IsNullOrEmpty($vmImage)) {
+    Write-Host "Error: One or more required parameters are missing!"
+    exit 1
+}
+
 # Create a new VM configuration
 $vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize
 

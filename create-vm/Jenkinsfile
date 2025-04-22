@@ -2,7 +2,7 @@ pipeline {
     agent { label 'agent-linux' }
 
     environment {
-        AZURE_CREDS = credentials('AZURE_CREDENTIALS') // Azure credentials stored in Jenkins
+        AZURE_CREDS = credentials('AZURE_CREDENTIALS')  // Azure credentials stored in Jenkins
     }
 
     parameters {
@@ -26,11 +26,10 @@ pipeline {
             steps {
                 pwsh '''
                     # Set the Azure credentials environment variable
-                    
                     $env:AZURE_CREDS_JSON = $env:AZURE_CREDS
 
                     # Use absolute path to the script
-                    $scriptPath = "${env.WORKSPACE}powershell_scripts/login.ps1"
+                    $scriptPath = "${env.WORKSPACE}/powershell_scripts/login.ps1"
 
                     # Check if the script exists
                     if (Test-Path $scriptPath) {
@@ -57,7 +56,7 @@ pipeline {
                     $vmImage = "${params.VM_IMAGE}"
 
                     # Path to the PowerShell script for VM creation
-                    $scriptPath = "${env.WORKSPACE}create-vm/create-vm.ps1"
+                    $scriptPath = "${env.WORKSPACE}/powershell_scripts/create-vm.ps1"
 
                     # Check if the script exists
                     if (Test-Path $scriptPath) {

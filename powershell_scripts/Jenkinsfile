@@ -11,16 +11,7 @@ pipeline {
                 // Checkout the repository to make sure the .ps1 scripts are available
                 checkout scm
             }
-        }
-
-        stage('Print Workspace') {
-            steps {
-                pwsh '''
-                    # Print the value of the WORKSPACE environment variable
-                    Write-Host "WORKSPACE: $env:WORKSPACE"
-                '''
-            }
-        }
+        }        
 
         stage('Login to Azure') {
             steps {
