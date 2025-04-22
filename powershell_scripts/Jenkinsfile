@@ -44,7 +44,7 @@ pipeline {
             }
         }
 
-        stage('Run Azure PowerShell') {
+        stage('List RG & region') {
             steps {
                 pwsh '''
                     # Run the script to list resource groups
