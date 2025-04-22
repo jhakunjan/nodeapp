@@ -10,14 +10,14 @@ pipeline {
             steps {
                 pwsh '''
                     $env:AZURE_CREDENTIALS_JSON = $env:AZURE_CREDS
-                    ./powershell/login.ps1
+                    ./login.ps1
                 '''
             }
         }
 
         stage('Run Azure PowerShell') {
             steps {
-                pwsh './powershell/list-resource-groups.ps1'
+                pwsh './list-resource-groups.ps1'
             }
         }
     }
