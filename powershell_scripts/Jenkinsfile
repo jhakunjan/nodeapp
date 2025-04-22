@@ -29,7 +29,7 @@ pipeline {
                     $env:AZURE_CREDS_JSON = $env:AZURE_CREDS
 
                     # Use absolute path to the script
-                    $scriptPath = "${env.WORKSPACE}/powershell_scripts/login.ps1"
+                    $scriptPath = "${env.WORKSPACE}/nodeapp/powershell_scripts/login.ps1"
 
                     # Check if the script exists
                     if (Test-Path $scriptPath) {
@@ -47,7 +47,7 @@ pipeline {
             steps {
                 pwsh '''
                     # Run the script to list resource groups
-                    $scriptPath = "${env.WORKSPACE}/powershell_scripts/list-resource-groups.ps1"
+                    $scriptPath = "${env.WORKSPACE}/nodeapp/powershell_scripts/list-resource-groups.ps1"
                     
                     # Check if the script exists
                     if (Test-Path $scriptPath) {
