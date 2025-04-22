@@ -26,8 +26,7 @@ pipeline {
             steps {
                 pwsh '''
                     # Set the Azure credentials environment variable
-                    Set-ExecutionPolicy Unrestricted -Scope CurrentUser
-
+                    
                     $env:AZURE_CREDS_JSON = $env:AZURE_CREDS
 
                     # Use absolute path to the script
