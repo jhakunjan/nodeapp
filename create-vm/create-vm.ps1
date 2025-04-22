@@ -1,27 +1,31 @@
-$vmName = $env:VM_NAME
-$vmSize = $env:VM_SIZE
-$adminUsername = $env:ADMIN_USERNAME
-$adminPassword = $env:ADMIN_PASSWORD
+# Suppress interactive prompts and force errors to stop
+$ConfirmPreference     = 'None'
+$ErrorActionPreference = 'Stop'
+
+# Grab Jenkins‑exported env vars
+$vmName            = $env:VM_NAME
+$vmSize            = $env:VM_SIZE
+$adminUsername     = $env:ADMIN_USERNAME
+$adminPassword     = $env:ADMIN_PASSWORD
 $resourceGroupName = $env:RESOURCE_GROUP
-$location = $env:LOCATION
-$vmImage = $env:VM_IMAGE
+$location          = $env:LOCATION
+$vmImage           = $env:VM_IMAGE
+
+# Secure the password
 $securePassword = ConvertTo-SecureString $adminPassword -AsPlainText -Force
 
-# Names
-$vnetName     = "virtual-nw-dev"    # your existing VNet name
-$subnetName   = "subnet-frontend"   # your existing Subnet name
+# Networking names
+$vnetName     = "virtual-nw-dev"    # existing VNet
+$subnetName   = "subnet-frontend"   # existing Subnet
 $nicName      = "$vmName-nic"
 $publicIpName = "$vmName-pip"
 
-# 1) Get the VNet and Subnet
-$vnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName -ErrorAction Stop
+# 1) Validate VNet & Subnet
+$vnet   = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName
 $subnet = $vnet.Subnets | Where-Object Name -EQ $subnetName
-if (-not $subnet) {
-    Write-Error "Subnet '$subnetName' not found in VNet '$vnetName'"
-    exit 1
-}
+if (-not $subnet) { Throw "Subnet '$subnetName' not found in VNet '$vnetName'" }
 
-# 2) Create (or reuse) a basic dynamic Public IP
+# 2) Create or reuse Public IP
 $publicIp = Get-AzPublicIpAddress -Name $publicIpName -ResourceGroupName $resourceGroupName -ErrorAction SilentlyContinue
 if (-not $publicIp) {
     $publicIp = New-AzPublicIpAddress `
@@ -29,24 +33,34 @@ if (-not $publicIp) {
         -ResourceGroupName $resourceGroupName `
         -Location $location `
         -Sku Basic `
-        -AllocationMethod Dynamic `
-        -ErrorAction Stop
+        -AllocationMethod Dynamic
 }
 
-# 3) Create the NIC using SubnetId
-$nic = New-AzNetworkInterface `
-    -Name $nicName `
-    -ResourceGroupName $resourceGroupName `
-    -Location $location `
-    -SubnetId $subnet.Id `
-    -PublicIpAddressId $publicIp.Id `
-    -ErrorAction Stop
+# 3) Create or reuse NIC (no prompt)
+$nic = Get-AzNetworkInterface -Name $nicName -ResourceGroupName $resourceGroupName -ErrorAction SilentlyContinue
+if (-not $nic) {
+    Write-Host "Creating NIC: $nicName"
+    $nic = New-AzNetworkInterface `
+        -Name $nicName `
+        -ResourceGroupName $resourceGroupName `
+        -Location $location `
+        -SubnetId $subnet.Id `
+        -PublicIpAddressId $publicIp.Id
+} else {
+    Write-Host "Reusing existing NIC: $nicName"
+}
 
 # 4) Build VM configuration
 $cred = New-Object System.Management.Automation.PSCredential($adminUsername, $securePassword)
 $vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize
 
-# 5) Set OS (Windows) with the credential and provision agent
+# 5) Apply image
+$parts = $vmImage -split ":"
+$vmConfig = Set-AzVMSourceImage `
+    -VM $vmConfig `
+    -PublisherName $parts[0] -Offer $parts[1] -Sku $parts[2] -Version $parts[3]
+
+# 6) Enable Windows OS + cred + agent
 $vmConfig = Set-AzVMOperatingSystem `
     -VM $vmConfig `
     -Windows `
@@ -54,19 +68,10 @@ $vmConfig = Set-AzVMOperatingSystem `
     -Credential $cred `
     -ProvisionVMAgent
 
-# 6) (Optional) Set your image here, or Azure will use default
-# Example: Windows Server 2022 Datacenter
-$vmConfig = Set-AzVMSourceImage `
-    -VM $vmConfig `
-    -PublisherName "MicrosoftWindowsServer" `
-    -Offer "WindowsServer" `
-    -Sku "2022-datacenter" `
-    -Version "latest"
-
-# 7) Attach the NIC
+# 7) Attach NIC
 $vmConfig = Add-AzVMNetworkInterface -VM $vmConfig -Id $nic.Id
 
 # 8) Create the VM
-New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig -ErrorAction Stop
+New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig
 
 Write-Host "✅ Azure virtual machine '$vmName' creation initiated."
