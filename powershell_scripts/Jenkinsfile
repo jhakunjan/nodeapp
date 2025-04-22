@@ -70,4 +70,9 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            archiveArtifacts artifacts: 'vm_info.csv', fingerprint: true
+        }
+    }
 }
