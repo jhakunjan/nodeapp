@@ -6,6 +6,13 @@ pipeline {
     }
 
     stages {
+        stage('Checkout Code') {
+            steps {
+                // Checkout the repository to make sure the .ps1 scripts are available
+                checkout scm
+            }
+        }
+
         stage('Login to Azure') {
             steps {
                 pwsh '''
