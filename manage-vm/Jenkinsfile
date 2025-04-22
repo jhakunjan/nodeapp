@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+
+    environment {
+        AZURE_SUBSCRIPTION = 'your-subscription-id'
+    }
+
+    parameters {
+        choice(name: 'ACTION', choices: ['start', 'stop', 'status'], description: 'Action to perform')
+        string(name: 'RESOURCE_GROUP', defaultValue: '', description: 'Azure Resource Group (populated dynamically)')
+        string(name: 'VM_NAME', defaultValue: '', description: 'Azure VM Name (populated dynamically)')
+    }
+
+    stages {
+        stage('Azure Login') {
+            steps {
+                powershell '''
+                    az login --service-principal -u $env:AZURE_CLIENT_ID `
+                        -p $env:AZURE_CLIENT_SECRET `
+                        --tenant $env:AZURE_TENANT_ID
+                    az account set --subscription $env:AZURE_SUBSCRIPTION
+                '''
+            }
+        }
+
+        stage('Run VM Action') {
+            steps {
+                powershell '''
+                    .\\manage-vm.ps1 `
+                        -action "$env:ACTION" `
+                        -vmName "$env:VM_NAME" `
+                        -resourceGroup "$env:RESOURCE_GROUP"
+                '''
+            }
+        }
+    }
+}
