@@ -5,13 +5,7 @@ pipeline {
         AZURE_CREDS = credentials('AZURE_CREDENTIALS')
     }
 
-    stages {
-        stage('Checkout Code') {
-            steps {
-                // Checkout the repository to make sure the .ps1 scripts are available
-                checkout scm
-            }
-        }
+    stages {        
 
         stage('Login to Azure') {
             steps {
@@ -20,7 +14,8 @@ pipeline {
                     $env:AZURE_CREDS_JSON = $env:AZURE_CREDS
 
                     # Use absolute path to the script
-                    $scriptPath = "${env.WORKSPACE}/login.ps1"
+                
+                    $scriptPath = "${env.WORKSPACE}/powershell_scripts/login.ps1"
                     & $scriptPath
                 '''
             }
@@ -30,7 +25,7 @@ pipeline {
             steps {
                 pwsh '''
                     # Run the script to list resource groups
-                    $scriptPath = "${env.WORKSPACE}/list-resource-groups.ps1"
+                    $scriptPath = "${env.WORKSPACE}/powershell_scripts/list-resource-groups.ps1"
                     & $scriptPath
                 '''
             }
