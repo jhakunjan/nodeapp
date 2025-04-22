@@ -57,6 +57,7 @@ pipeline {
                 pwsh '''
                     # Run the script to list resource groups
                     $scriptPath = "${env.WORKSPACE}powershell_scripts/export-vm.ps1"
+                    & $scriptPath
                     
                 '''
             }
