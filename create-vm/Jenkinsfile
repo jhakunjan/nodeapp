@@ -12,7 +12,7 @@ pipeline {
         string(name: 'ADMIN_PASSWORD', defaultValue: '', description: 'Admin password for the VM')
         string(name: 'RESOURCE_GROUP', defaultValue: 'rg-admin-001', description: 'Resource Group Name')
         string(name: 'LOCATION', defaultValue: 'Central India', description: 'Location for the VM')
-        string(name: 'VM_IMAGE', defaultValue: 'Canonical:UbuntuServer:20.04-LTS:latest', description: 'VM Image in the format Publisher:Offer:Sku:Version')
+        string(name: 'VM_IMAGE', defaultValue: 'Canonical:ubuntu-24_04-lts:server:latest', description: 'VM Image in the format Publisher:Offer:Sku:Version')
     }
 
     stages {
