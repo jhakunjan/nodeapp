@@ -53,9 +53,6 @@ $nic = New-AzNetworkInterface -Name $nicName -ResourceGroupName $resourceGroupNa
 # Create a new VM configuration
 $vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize
 
-
-
-# Set the image for the VM (provided in the parameters)
 $vmConfig = Set-AzVMSourceImage -VM $vmConfig -PublisherName ( ($vmImage -split ":")[0] ) `
     -Offer ( ($vmImage -split ":")[1] ) -Sku ( ($vmImage -split ":")[2] ) `
     -Version ( ($vmImage -split ":")[3] )
@@ -65,8 +62,10 @@ $vmConfig = Set-AzVMOperatingSystem -VM $vmConfig -Linux -ComputerName $vmName `
     -Credential (New-Object System.Management.Automation.PSCredential($adminUsername, $securePassword)) `
     -DisablePasswordAuthentication $false
 
+# Set the image for the VM (provided in the parameters)
+
 #  Attach the NIC to the VM
-$vmConfig = Add-AzVMNetworkInterface -VM $vmConfig -Id $nic.Id
+$vmConfig = Add-AzVMNetworkInterface -VM $vmConfig -Id $nic
 
 # Create the VM
 New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig
