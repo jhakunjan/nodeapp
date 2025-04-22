@@ -1,36 +1,47 @@
 pipeline {
-    agent any
+    agent { label 'agent-linux' }
 
     environment {
-        AZURE_SUBSCRIPTION = 'your-subscription-id'
+        AZURE_CREDS = credentials('AZURE_CREDENTIALS')
     }
 
     parameters {
         choice(name: 'ACTION', choices: ['start', 'stop', 'status'], description: 'Action to perform')
-        string(name: 'RESOURCE_GROUP', defaultValue: '', description: 'Azure Resource Group (populated dynamically)')
-        string(name: 'VM_NAME', defaultValue: '', description: 'Azure VM Name (populated dynamically)')
+        string(name: 'RESOURCE_GROUP', defaultValue: '', description: 'Azure Resource Group ')
+        string(name: 'VM_NAME', defaultValue: '', description: 'Azure VM Name ')
     }
 
     stages {
-        stage('Azure Login') {
+        stage('Login to Azure') {
             steps {
-                powershell '''
-                    az login --service-principal -u $env:AZURE_CLIENT_ID `
-                        -p $env:AZURE_CLIENT_SECRET `
-                        --tenant $env:AZURE_TENANT_ID
-                    az account set --subscription $env:AZURE_SUBSCRIPTION
+                pwsh '''
+                    # Set the Azure credentials environment variable
+                    
+                    $env:AZURE_CREDS_JSON = $env:AZURE_CREDS
+
+                    # Use absolute path to the script
+                    $scriptPath = "${env.WORKSPACE}powershell_scripts/login.ps1"
+
+                    # Check if the script exists
+                    if (Test-Path $scriptPath) {
+                        Write-Host "Found login.ps1 at: $scriptPath"
+                        & $scriptPath
+                    } else {
+                        Write-Host "login.ps1 not found at: $scriptPath"
+                        exit 1
+                    }
                 '''
             }
         }
 
         stage('Run VM Action') {
             steps {
-                powershell '''
-                    .\\manage-vm.ps1 `
-                        -action "$env:ACTION" `
-                        -vmName "$env:VM_NAME" `
-                        -resourceGroup "$env:RESOURCE_GROUP"
-                '''
+                pwsh """
+                    ./manage-vm/manage-vm.ps1 `
+                        -action '${params.ACTION}' `
+                        -vmName '${params.VM_NAME}' `
+                        -resourceGroup '${params.RESOURCE_GROUP}'
+                """
             }
         }
     }
