@@ -24,9 +24,9 @@ pipeline {
 
         stage('Run Azure PowerShell') {
             steps {
-                powershell '''
+                pwsh '''
                     # Example Azure command
-                    Get-AzVM | Select Name, ResourceGroupName, Location, PowerState
+                    Get-AzResourceGroup | Select-Object ResourceGroupName, Location | Format-Table -AutoSize
                 '''
             }
         }
