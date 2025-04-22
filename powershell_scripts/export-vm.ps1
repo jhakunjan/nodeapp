@@ -1,18 +1,21 @@
+try {
+    $vms = Get-AzVM
+} catch {
+    Write-Host "❌ Failed to fetch VMs. Check Azure login or permissions."
+    exit 1
+}
 
-
-# Get all VMs in the subscription
-$vms = Get-AzVM
-
-# Create an empty array to store VM information
 $vmInfo = @()
 
 foreach ($vm in $vms) {
-    # Capture the VM's power state (requires instance view)
-    $status = (Get-AzVM -ResourceGroupName $vm.ResourceGroupName -Name $vm.Name -Status).Statuses |
-              Where-Object { $_.Code -like 'PowerState/*' } |
-              Select-Object -ExpandProperty DisplayStatus
+    try {
+        $status = (Get-AzVM -ResourceGroupName $vm.ResourceGroupName -Name $vm.Name -Status).Statuses |
+                  Where-Object { $_.Code -like 'PowerState/*' } |
+                  Select-Object -ExpandProperty DisplayStatus
+    } catch {
+        $status = "Unknown"
+    }
 
-    # Build a PSObject for each VM
     $vmDetails = [PSCustomObject]@{
         Name     = $vm.Name
         Size     = $vm.HardwareProfile.VmSize
@@ -23,11 +26,12 @@ foreach ($vm in $vms) {
     $vmInfo += $vmDetails
 }
 
-# Output to Jenkins console in table format
-Write-Host "===== VM Inventory ====="
-$vmInfo | Format-Table -AutoSize
+$outputPath = Join-Path -Path $env:WORKSPACE -ChildPath 'vm_info.csv'
+$vmInfo | Export-Csv -Path $outputPath -NoTypeInformation
 
-# Optional: Export to CSV for archiving (uncomment if needed)
-# $vmInfo | Export-Csv -Path "$env:WORKSPACE/vm_info.csv" -NoTypeInformation
-
-Write-Host "`nVM information output completed."
+if (Test-Path $outputPath) {
+    Write-Host "✅ VM info exported to $outputPath"
+} else {
+    Write-Host "❌ Export failed. File not found at $outputPath"
+    exit 1
+}
