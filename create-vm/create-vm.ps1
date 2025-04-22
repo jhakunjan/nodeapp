@@ -33,6 +33,22 @@ Write-Host "Admin Username: $adminUsername"
 Write-Host "Resource Group: $resourceGroupName"
 Write-Host "Location: $location"
 Write-Host "VM Image: $vmImage"
+$nicName = "$vmName-nic"
+$publicIpName = "$vmName-pip"
+$vnetName = "virtual-nw-dev"
+$subnetName = "subnet-frontend" 
+
+# Get existing VNet and Subnet
+$vnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName
+$subnet = Get-AzVirtualNetworkSubnetConfig -Name $subnetName -VirtualNetwork $vnet
+
+# Create Public IP
+$publicIp = New-AzPublicIpAddress -Name $publicIpName -ResourceGroupName $resourceGroupName `
+    -Location $location -AllocationMethod Dynamic
+
+# Create NIC
+$nic = New-AzNetworkInterface -Name $nicName -ResourceGroupName $resourceGroupName `
+    -Location $location -SubnetId $subnet.Id -PublicIpAddressId $publicIp.Id    
 
 # Create a new VM configuration
 $vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize
@@ -46,6 +62,9 @@ $vmConfig = Set-AzVMOperatingSystem -VM $vmConfig -Linux -ComputerName $vmName `
 $vmConfig = Set-AzVMSourceImage -VM $vmConfig -PublisherName ( ($vmImage -split ":")[0] ) `
     -Offer ( ($vmImage -split ":")[1] ) -Sku ( ($vmImage -split ":")[2] ) `
     -Version ( ($vmImage -split ":")[3] )
+
+#  Attach the NIC to the VM
+$vmConfig = Add-AzVMNetworkInterface -VM $vmConfig -Id $nic.Id
 
 # Create the VM
 New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig
