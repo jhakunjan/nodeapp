@@ -7,36 +7,66 @@ $location = $env:LOCATION
 $vmImage = $env:VM_IMAGE
 $securePassword = ConvertTo-SecureString $adminPassword -AsPlainText -Force
 
-# PowerShell script to create an Azure Virtual Machine
+# Names
+$vnetName     = "virtual-nw-dev"    # your existing VNet name
+$subnetName   = "subnet-frontend"   # your existing Subnet name
+$nicName      = "$vmName-nic"
+$publicIpName = "$vmName-pip"
 
-# Prerequisites:
-# 1. Install Azure PowerShell module: Install-Module -Name Az -AllowClobber
-# 2. Connect to your Azure account: Connect-AzAccount
-
-
-
-# Create resource group if it doesn't exist
-if (!(Get-AzResourceGroup -Name $resourceGroupName)) {
-    New-AzResourceGroup -Name $resourceGroupName -Location $location
+# 1) Get the VNet and Subnet
+$vnet = Get-AzVirtualNetwork -Name $vnetName -ResourceGroupName $resourceGroupName -ErrorAction Stop
+$subnet = $vnet.Subnets | Where-Object Name -EQ $subnetName
+if (-not $subnet) {
+    Write-Error "Subnet '$subnetName' not found in VNet '$vnetName'"
+    exit 1
 }
 
+# 2) Create (or reuse) a basic dynamic Public IP
+$publicIp = Get-AzPublicIpAddress -Name $publicIpName -ResourceGroupName $resourceGroupName -ErrorAction SilentlyContinue
+if (-not $publicIp) {
+    $publicIp = New-AzPublicIpAddress `
+        -Name $publicIpName `
+        -ResourceGroupName $resourceGroupName `
+        -Location $location `
+        -Sku Basic `
+        -AllocationMethod Dynamic `
+        -ErrorAction Stop
+}
 
-$subnet = "subnet-frontend"
-$vnet =  "virtual-nw-dev"
+# 3) Create the NIC using SubnetId
+$nic = New-AzNetworkInterface `
+    -Name $nicName `
+    -ResourceGroupName $resourceGroupName `
+    -Location $location `
+    -SubnetId $subnet.Id `
+    -PublicIpAddressId $publicIp.Id `
+    -ErrorAction Stop
 
-# Create a public IP address
-$publicIp = New-AzPublicIpAddress -ResourceGroupName $resourceGroupName -Location $location -Name myPublicIP -AllocationMethod Dynamic
+# 4) Build VM configuration
+$cred = New-Object System.Management.Automation.PSCredential($adminUsername, $securePassword)
+$vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize
 
-# Create a network interface
-$nic = New-AzNetworkInterface -ResourceGroupName $resourceGroupName -Location $location -Name myNIC -VirtualNetworkName $vnet -SubnetName $subnet -PublicIpAddressId $publicIp.Id
+# 5) Set OS (Windows) with the credential and provision agent
+$vmConfig = Set-AzVMOperatingSystem `
+    -VM $vmConfig `
+    -Windows `
+    -ComputerName $vmName `
+    -Credential $cred `
+    -ProvisionVMAgent
 
-# Create the VM configuration
-$vmConfig = New-AzVMConfig -VMName $vmName -VMSize $vmSize -Credential (New-Credential -Username $adminUsername -Password $securePassword )
-$vmConfig = Set-AzVMOperatingSystem -VM $vmConfig -Windows -ComputerName $vmName -ProvisionVMAgent
-$vmConfig = Set-AzVMSourceImage -VM $vmConfig -PublisherName "MicrosoftWindowsServer" -Offer "WindowsServer" -Skus "2022-datacenter" -Version "latest"
+# 6) (Optional) Set your image here, or Azure will use default
+# Example: Windows Server 2022 Datacenter
+$vmConfig = Set-AzVMSourceImage `
+    -VM $vmConfig `
+    -PublisherName "MicrosoftWindowsServer" `
+    -Offer "WindowsServer" `
+    -Sku "2022-datacenter" `
+    -Version "latest"
+
+# 7) Attach the NIC
 $vmConfig = Add-AzVMNetworkInterface -VM $vmConfig -Id $nic.Id
 
-# Create the VM
-New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig
+# 8) Create the VM
+New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig -ErrorAction Stop
 
-Write-Host "Azure virtual machine '$vmName' created successfully."
+Write-Host "✅ Azure virtual machine '$vmName' creation initiated."
