@@ -12,18 +12,18 @@ Write-Host "🔁 Action: $action on VM: $vmName in RG: $resourceGroup"
 switch ($action.ToLower()) {
     "start" {
         Start-AzVM -Name $vmName -ResourceGroupName $resourceGroup
-        Write-Host "✅ VM '$vmName' started."
+        Write-Host " VM '$vmName' started."
     }
     "stop" {
         Stop-AzVM -Name $vmName -ResourceGroupName $resourceGroup -Force
-        Write-Host "🛑 VM '$vmName' stopped."
+        Write-Host " VM '$vmName' stopped."
     }
     "status" {
         $vm = Get-AzVM -Name $vmName -ResourceGroupName $resourceGroup -Status
         $status = $vm.Statuses | Where-Object { $_.Code -like 'PowerState/*' }
-        Write-Host "📡 Status: $($status.DisplayStatus)"
+        Write-Host " Status: $($status.DisplayStatus)"
     }
     default {
-        throw "❌ Invalid action: $action"
+        throw " Invalid action: $action"
     }
 }

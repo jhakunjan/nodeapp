@@ -92,4 +92,4 @@ $vmConfig = Add-AzVMNetworkInterface -VM $vmConfig -Id $nic.Id
 # 7) Create the VM
 New-AzVM -ResourceGroupName $resourceGroupName -Location $location -VM $vmConfig
 
-Write-Host "✅ Azure virtual machine '$vmName' creation initiated."
+Write-Host " Azure virtual machine '$vmName' creation initiated."
