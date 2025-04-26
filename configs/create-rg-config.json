@@ -1,0 +1,16 @@
+{
+    "resourceGroup" : {
+        "name" : "rg-dev-002",
+        "location" : "Central India"
+    },
+
+    "virtualNetwork" : {
+        "name" : "vn-dev-002",
+        "addressSpace" : "10.0.0.0/16",
+        "subnets" : [
+            {"name": "subnet-frontend", "addressPrefix" : "10.0.1.0/24"},
+            {"name": "subnet-backend", "addressPrefix" : "10.0.0.0/24"}
+        ]
+    }
+    
+}

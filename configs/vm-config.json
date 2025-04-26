@@ -1,0 +1,45 @@
+{
+    "vm_details" : [
+        {
+            "vmType" : "Windows",
+            "vmName": "WinVM", 
+            "vmSize": "Standard_B1s",
+            "storageAccountName" : "sadev002kj", 
+            "vmImage":{
+                "offer": "WindowsServer",
+                "publisher": "MicrosoftWindowsServer",
+                "sku": "2019-Datacenter",
+                "urn": "MicrosoftWindowsServer:WindowsServer:2019-Datacenter:latest",
+                "urnAlias": "Win2012Datacenter",
+                "version": "latest"
+            }, 
+            "location": "centralindia", 
+            "resourceGroupName":"rg-dev-002",
+            "vnetName" : "vn-dev-002", 
+            "subnetName" : "subnet-backend", 
+            "adminUsername" : "kunjanj", 
+            "adminPassword": "Whoami@123" 
+        },
+        {
+            "vmType" : "Linux", 
+            "vmName": "LinuxVM", 
+            "vmSize": "Standard_B1s", 
+            "vmImage":{
+                "architecture": "x64",
+                "offer": "ubuntu-24_04-lts",
+                "publisher": "Canonical",
+                "sku": "server",
+                "urn": "Canonical:ubuntu-24_04-lts:server:latest",
+                "urnAlias": "Ubuntu2404",
+                "version": "latest"
+              }, 
+            "storageAccountName" : "sadev002kj",
+            "location": "centralindia", 
+            "resourceGroupName":"rg-dev-002",
+            "vnetName" : "vn-dev-002", 
+            "subnetName" : "subnet-backend", 
+            "adminUsername" : "kunjanj", 
+            "adminPassword": "Whoami@123"
+        }
+    ]
+}
