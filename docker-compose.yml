@@ -1,0 +1,24 @@
+version: '3.9'
+
+services:
+  web:
+    build: 
+      context: .  # Point to the root directory where server.js and Dockerfile are
+    ports:
+      - "${APP_PORT}:${CONTAINER_PORT}"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=${NODE_ENV}
+    volumes:
+      - ${VOLUME_NAME}:/usr/src/app  # Bind the volume defined in .env file
+    networks:
+      - ${DOCKER_NETWORK}  # Use the network defined in .env file
+    network_mode: host  # Use host network
+
+volumes:
+   ${VOLUME_NAME} :  # Define the volume from .env file
+
+networks:
+  ${DOCKER_NETWORK}:  # Define the network from .env file
+    driver: host  # Default bridge network driver
