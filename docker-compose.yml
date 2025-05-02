@@ -12,7 +12,11 @@ services:
       - NODE_ENV=${NODE_ENV}
      # Use the network defined in .env file
     network_mode: host  # Use host network (if desired, otherwise remove this line)
+    volumes:
+     - VOLUME_PATH = ${VOLUME_PATH}
 
 networks:
   ${DOCKER_NETWORK}:
     driver: host  # Default bridge network driver
+
+

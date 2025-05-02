@@ -1,0 +1,23 @@
+kind create cluster # create kind cluster for local k8s testing.
+kubectl cluster-info --context kind-kind
+    Kubernetes master is running at https://127.0.0.1:36795
+    CoreDNS is running at https://127.0.0.1:36795/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+    To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+Create multinode :
+    define in .config file
+    kind create cluster --name "" --config "configfile"
+
+Create k8s dashboard:
+    - using kubectl command:
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+    - create service account with role binding for dashboard:
+        kubectl apply -f dashboard-admin.yml
+    - access on browser:
+        kubectl proxy
+    - create token to access:
+        kubectl -n "" create token "user"
+
+
+
+

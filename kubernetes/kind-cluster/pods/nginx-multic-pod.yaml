@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-sidecar-pod
+  namespace: sample-ns
+  labels:
+    app: nginx-app-multicontainer
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx:1.21
+      ports:
+        - containerPort: 80
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "250m"
+          memory: "256Mi"
+      volumeMounts:
+        - name: shared-logs
+          mountPath: /var/log/nginx
+        - name: config-vol
+          mountPath: /etc/config
+        - name: secret-vol
+          mountPath: /etc/secret
+
+    - name: log-agent
+      image: busybox
+      command: ["/bin/sh", "-c"]
+      args: ["tail -f /var/log/nginx/access.log"]
+      resources:
+        requests:
+          cpu: "50m"
+          memory: "64Mi"
+        limits:
+          cpu: "100m"
+          memory: "128Mi"
+      volumeMounts:
+        - name: shared-logs
+          mountPath: /var/log/nginx
+        - name: config-vol
+          mountPath: /etc/config
+        - name: secret-vol
+          mountPath: /etc/secret
+
+  volumes:
+    - name: shared-logs
+      emptyDir: {}
+    - name: config-vol
+      configMap:
+        name: nginx-app-config
+    - name: secret-vol
+      secret:
+        secretName: nginx-app-secret
+      

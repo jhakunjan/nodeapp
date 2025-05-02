@@ -1,0 +1,33 @@
+create rg:
+ az group create --resource-group rg-aks-001 --location eastus
+
+create cluster:
+az aks create \
+  --resource-group rg-aks-001 \
+  --name cluster-aks-kj \
+  --node-count 2 \
+  --node-vm-size Standard_DS2_v2 \
+  --enable-cluster-autoscaler \
+  --min-count 1 \
+  --max-count 3 \
+  --generate-ssh-keys
+
+connect cluster:
+az aks get-credentials --resource-group rg-aks-001 --name cluster-aks-kj
+
+login to acr:
+az acr login --name acraks001
+
+tag image:
+docker tag my-app acraks001-fuaeeycebdecafbm.azurecr.io/samples/my-app:latest
+
+push image to acr:
+docker push acraks001-fuaeeycebdecafbm.azurecr.io/samples/my-app:latest
+
+attach acr with cluster:
+az aks update \
+  --name cluster-aks-kj \
+  --resource-group rg-aks-001 \
+  --attach-acr acraks001
+
+

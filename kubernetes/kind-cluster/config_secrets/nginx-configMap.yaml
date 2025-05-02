@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-app-config
+  namespace: sample-ns
+data:
+  APP_NAME: nginx-app
+  APP_ENV: development
+  CONTAINER_PORT: "80"

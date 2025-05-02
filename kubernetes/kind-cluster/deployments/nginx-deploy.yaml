@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-app
+  namespace: sample-ns
+  labels:
+    app: nginx-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-app
+  template:
+    metadata:
+      labels:
+        app: nginx-app
+    spec:
+      containers:
+      - name: nginx-app-container
+        image: nginx:1.21
+        ports:
+        - containerPort: 80
+        env:
+          - name: APP_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: nginx-app-config
+                key: APP_NAME
+          - name: APP_ENV
+            valueFrom:
+              configMapKeyRef:
+                name: nginx-app-config
+                key: APP_ENV
+          - name: CONTAINER_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: nginx-app-config
+                key: CONTAINER_PORT
+          - name: AUTH_USER
+            valueFrom:
+              secretKeyRef:
+                name: nginx-app-secret
+                key: AUTH_USER
+          - name: AUTH_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: nginx-app-secret
+                key: AUTH_PASSWORD
+
+
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
