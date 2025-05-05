@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'agent-linux' }
+    agent any
     
     tools{
         nodejs 'NodeJS_20' //ensure this should be configured in jenkins global tools
