@@ -19,8 +19,8 @@ pipeline {
     }
 
     environment {
-        ARTIFACTORY_URL = 'https://trial7fyb86.jfrog.io/artifactory/nodeapp-npm/'
-        ARTIFACTORY_REPO = 'nodeapp-npm'
+        ARTIFACTORY_URL = 'https://trialbag95d.jfrog.io/artifactory/api/npm/sampleapp-npm'
+        ARTIFACTORY_REPO = 'sampleapp-npm'
         PACKAGE_NAME = "node-app-package.tar-0.0.${BUILD_NUMBER}.gz"  
     }
 
@@ -55,7 +55,7 @@ pipeline {
 
         stage('SonarQube Quality Gate') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {  // Wait for up to 5 minutes
+                timeout(time: 10, unit: 'MINUTES') {  // Wait for up to 10 minutes
                     waitForQualityGate abortPipeline: true  // Abort if the quality gate fails
                 }
             }
