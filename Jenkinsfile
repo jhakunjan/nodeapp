@@ -33,25 +33,28 @@ pipeline {
             }
         }
 
-        stage('Unit Test') {
-            steps {                
-                sh 'npm install --save-dev jest supertest'
-                echo ' Running unit tests...'
-                sh 'npm test'
-                sh 'npm run coverage'
+        stage('Parallel: Test & Code Analysis') {
+            parallel {
+                stage('Unit Test') {
+                    steps {
+                        sh 'npm install --save-dev jest supertest'
+                        echo 'Running unit tests...'
+                        sh 'npm test'
+                        sh 'npm run coverage'
+                    }
+                }
 
-            }
-        }
-
-        stage('SonarQube Code Analysis') {
-            steps {
-                sh 'npm install --save-dev sonar-scanner'
-                echo 'Running SonarQube scan...'
-                withSonarQubeEnv('SonarQubeServer') {
-                    sh 'npm run sonar'
+                stage('SonarQube Code Analysis') {
+                    steps {
+                        sh 'npm install --save-dev sonar-scanner'
+                        echo 'Running SonarQube scan...'
+                        withSonarQubeEnv('SonarQubeServer') {
+                            sh 'npm run sonar'
+                        }
+                    }
                 }
             }
-        }
+        }    
 
         stage('SonarQube Quality Gate') {
             steps {
