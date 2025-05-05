@@ -19,7 +19,7 @@ pipeline {
     }
 
     environment {
-        ARTIFACTORY_URL = 'https://trialbag95d.jfrog.io/artifactory/sampleapp-npm-local'
+        ARTIFACTORY_URL = 'https://trialbag95d.jfrog.io/artifactory/sampleapp-npm'
         ARTIFACTORY_REPO = 'sampleapp-npm'
         PACKAGE_NAME = "node-app-package.tar-0.0.${BUILD_NUMBER}.gz"  
     }
