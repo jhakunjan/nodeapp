@@ -130,6 +130,7 @@ pipeline {
             steps {
                 echo "Verifying app is accessible..."
                 sh 'curl --silent --fail http://localhost:3000/ || exit 1'
+                sleep(180)
             }
         }
     }
