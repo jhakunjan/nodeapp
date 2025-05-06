@@ -144,6 +144,7 @@ pipeline {
                         }
             }
         }
+        }
 
 
         stage('Smoke Test') {
