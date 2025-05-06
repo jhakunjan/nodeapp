@@ -2,16 +2,11 @@ pipeline {
     agent any
 
     tools {
-        nodejs 'NodeJS_20' // Ensure this is configured in Jenkins global tools
+        nodejs 'NodeJS_20'
     }
 
     options {
         buildDiscarder(logRotator(numToKeepStr: '10', daysToKeepStr: '30'))
-    }
-
-    triggers {
-        cron('H 11 * * 3,5') // Scheduled builds: Wed & Fri at 5 PM IST
-        githubPush()
     }
 
     environment {
@@ -21,9 +16,8 @@ pipeline {
     }
 
     stages {
-        stage('Setup Node.js Environment') {
+        stage('Setup Node.js') {
             steps {
-                echo 'Setting up Node.js on the agent...'
                 sh 'node -v'
                 sh 'npm -v'
             }
@@ -32,16 +26,14 @@ pipeline {
         stage('Unit Test') {
             steps {
                 sh 'npm install --save-dev jest supertest'
-                echo 'Running unit tests...'
                 sh 'npm test'
                 sh 'npm run coverage'
             }
         }
 
-        stage('SonarQube Code Analysis') {
+        stage('SonarQube Scan') {
             steps {
                 sh 'npm install --save-dev sonar-scanner'
-                echo 'Running SonarQube scan...'
                 withSonarQubeEnv('SonarQubeServer') {
                     sh 'npm run sonar'
                 }
@@ -70,11 +62,10 @@ pipeline {
             }
         }
 
-        stage('Push Package to Artifactory') {
+        stage('Push to Artifactory') {
             steps {
                 withCredentials([string(credentialsId: 'JF_ACCESS_TOKEN', variable: 'TOKEN')]) {
                     sh '''
-                        echo "Uploading $PACKAGE_NAME to Artifactory..."
                         curl -H "Authorization: Bearer $TOKEN" \
                              -T "$PACKAGE_NAME" \
                              "$ARTIFACTORY_URL/$PACKAGE_NAME"
@@ -89,40 +80,29 @@ pipeline {
             }
         }
 
-        stage('Download Artifact') {
+        stage('Deploy Locally') {
             steps {
                 withCredentials([string(credentialsId: 'JF_ACCESS_TOKEN', variable: 'TOKEN')]) {
                     sh '''
-                        echo "Downloading artifact: $PACKAGE_NAME..."
-                        curl -H "Authorization: Bearer $TOKEN" \
-                             -O "$ARTIFACTORY_URL/$PACKAGE_NAME"
+                        echo "Downloading package..."
+                        curl -H "Authorization: Bearer $TOKEN" -O "$ARTIFACTORY_URL/$PACKAGE_NAME"
+
+                        echo "Extracting package..."
+                        tar -xzf "$PACKAGE_NAME"
+
+                        echo "Installing dependencies..."
+                        npm install
+
+                        echo "Starting app on port 3000..."
+                        nohup node server.js > app.log 2>&1 &
                     '''
                 }
             }
         }
 
-        stage('Extract Artifact') {
-            steps {
-                echo "Extracting $PACKAGE_NAME into current workspace..."
-                sh '''
-                    tar -xzf "$PACKAGE_NAME"
-                '''
-            }
-        }
-
-        stage('Run Application') {
-            steps {
-                echo "Running Node.js app..."
-                sh '''
-                    npm install
-                    nohup node server.js > app.log 2>&1 &
-                '''
-            }
-        }
-
         stage('Smoke Test') {
             steps {
-                echo "Performing smoke test..."
+                echo "Verifying app is accessible..."
                 sh 'curl --silent --fail http://localhost:3000/ || exit 1'
             }
         }
@@ -130,13 +110,10 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo ' Local Deployment Successful!'
         }
         failure {
-            echo 'Pipeline failed!'
-        }
-        always {
-            cleanWs()
+            echo ' Deployment Failed'
         }
     }
 }

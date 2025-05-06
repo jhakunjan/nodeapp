@@ -33,9 +33,10 @@ app.use((err, req, res, next) => {
 
 // Only start server if not being required (i.e., not during test)
 if (require.main === module) {
-  app.listen(PORT, () => {
+  app.listen(PORT,'0.0.0.0', () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
   });
 }
+
 
 module.exports = app; // ✅ Export app for testing
