@@ -91,6 +91,54 @@ pipeline {
                     '''
                 }
             }
+        }
+
+        stage('Approval') {
+            steps {
+                input message: 'Approve deployment to local environment?', ok: 'Deploy'
+            }
+        }
+
+        stage('Download Artifact') {
+            steps {
+                script {
+                    echo "Downloading artifact: ${params.PACKAGE_NAME} from Artifactory..."
+                    withCredentials([string(credentialsId: 'JF_ACCESS_TOKEN', variable: 'TOKEN')]) {
+                        sh '''
+                            curl -H "Authorization: Bearer $TOKEN" \
+                                 -O "$ARTIFACTORY_URL${params.PACKAGE_NAME}"
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Extract Artifact') {
+            steps {
+                echo "Extracting ${params.PACKAGE_NAME}..."
+                sh '''
+                    mkdir -p $APP_DIR
+                    tar -xzf ${params.PACKAGE_NAME} -C $APP_DIR
+                '''
+            }
+        }
+
+        stage('Run Application') {
+            steps {
+                echo "Running Node.js application from package ${params.PACKAGE_NAME}..."
+                sh '''
+                    cd $APP_DIR
+                    npm install
+                    nohup node server.js > app.log 2>&1 &
+                '''
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                echo "Performing smoke test..."
+                sh "curl --silent --fail http://localhost:3000/ || exit 1"
+            }
         }       
     }
 
