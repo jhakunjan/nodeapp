@@ -14,6 +14,7 @@ pipeline {
         ARTIFACTORY_REPO = 'sampleapp-npm'
         PACKAGE_NAME = "node-app-package.tar-0.0.${BUILD_NUMBER}.gz"
     }
+
     parameters {
         choice(name: 'DEPLOY_ENV', choices: ['local', 'cloud'], description: 'Where do you want to deploy?')
     }
@@ -26,8 +27,8 @@ pipeline {
             }
         }
 
-        stage('Run tests'){
-            parallel{
+        stage('Run tests') {
+            parallel {
                 stage('Unit Test') {
                     steps {
                         sh 'npm install --save-dev jest supertest'
@@ -83,11 +84,7 @@ pipeline {
 
         stage('Approval') {
             steps {
-                script {
-                    input message: "Approve deployment and select environment", parameters: [
-                        choice(name: 'DEPLOY_ENV', choices: ['local', 'cloud'], description: 'Choose deployment environment')
-                    ]
-                }
+                input message: "Approve deployment to ${params.DEPLOY_ENV} environment?", ok: 'Deploy'
             }
         }
 
@@ -120,8 +117,7 @@ pipeline {
                                 echo "Starting Node.js server..."
                                 nohup node server.js > $DEPLOY_DIR/app.log 2>&1 &
                             '''
-                        } 
-                        else if (params.DEPLOY_ENV == 'cloud') {
+                        } else if (params.DEPLOY_ENV == 'cloud') {
                             echo "Deploying to CLOUD environment..."
                             sh '''
                                 CLOUD_USER=azureuser
@@ -138,14 +134,13 @@ pipeline {
                                     nohup node server.js > app.log 2>&1 &
                                 EOF
                             '''
-                        }
-                         else {
+                        } else {
                             error("Unknown deployment environment: ${params.DEPLOY_ENV}")
                         }
+                    }
+                }
             }
         }
-        }
-
 
         stage('Smoke Test') {
             steps {
@@ -157,14 +152,14 @@ pipeline {
 
     post {
         success {
-            echo ' Local Deployment Successful!'
+            echo 'Local Deployment Successful!'
         }
         failure {
-            echo ' Deployment Failed'
+            echo 'Deployment Failed'
         }
         always {
-        echo 'Cleaning Jenkins workspace...'
-        cleanWs()
-    }
+            echo 'Cleaning Jenkins workspace...'
+            cleanWs()
+        }
     }
 }
