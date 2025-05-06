@@ -152,7 +152,7 @@ pipeline {
 
     post {
         success {
-            echo 'Local Deployment Successful!'
+            echo 'Deployment Successful!'
         }
         failure {
             echo 'Deployment Failed'
