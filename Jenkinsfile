@@ -88,10 +88,7 @@ pipeline {
 
                         DEPLOY_DIR="/opt/node-app"
 
-                        echo "Creating deploy directory if it doesn't exist..."
-                        sudo mkdir -p $DEPLOY_DIR
-                        sudo chown -R $USER:$USER $DEPLOY_DIR
-
+                        
                         echo "Downloading artifact..."
                         curl -H "Authorization: Bearer $TOKEN" -o $DEPLOY_DIR/$PACKAGE_NAME "$ARTIFACTORY_URL/$PACKAGE_NAME"
 
