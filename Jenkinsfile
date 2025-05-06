@@ -16,7 +16,7 @@ pipeline {
     }
 
     parameters {
-        choice(name: 'DEPLOY_ENV', choices: ['local', 'cloud'], description: 'Where do you want to deploy?')
+        choice(name: 'DEPLOY_ENV', choices: ['local'], description: 'Where do you want to deploy?')
     }
 
     stages {
@@ -115,26 +115,10 @@ pipeline {
                                 npm install
 
                                 echo "Starting Node.js server..."
-                                nohup node server.js > $DEPLOY_DIR/app.log 2>&1 &
+                                nohup node server.js & > $DEPLOY_DIR/app.log 2>&1 &
                             '''
-                        } else if (params.DEPLOY_ENV == 'cloud') {
-                            echo "Deploying to CLOUD environment..."
-                            sh '''
-                                CLOUD_USER=azureuser
-                                CLOUD_HOST=your.cloud.vm.ip
-                                ARTIFACT_NAME="$PACKAGE_NAME"
-
-                                scp -o StrictHostKeyChecking=no $ARTIFACT_NAME $CLOUD_USER@$CLOUD_HOST:/tmp/
-                                ssh -o StrictHostKeyChecking=no $CLOUD_USER@$CLOUD_HOST << EOF
-                                    mkdir -p ~/node-app
-                                    tar -xzf /tmp/$ARTIFACT_NAME -C ~/node-app
-                                    cd ~/node-app
-                                    npm install
-                                    pkill -f "node server.js" || true
-                                    nohup node server.js > app.log 2>&1 &
-                                EOF
-                            '''
-                        } else {
+                        } 
+                        else {
                             error("Unknown deployment environment: ${params.DEPLOY_ENV}")
                         }
                     }
