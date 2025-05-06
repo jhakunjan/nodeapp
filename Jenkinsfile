@@ -84,21 +84,36 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'JF_ACCESS_TOKEN', variable: 'TOKEN')]) {
                     sh '''
-                        echo "Downloading package..."
-                        curl -H "Authorization: Bearer $TOKEN" -O "$ARTIFACTORY_URL/$PACKAGE_NAME"
+                        echo "Preparing deployment..."
 
-                        echo "Extracting package..."
-                        tar -xzf "$PACKAGE_NAME"
+                        DEPLOY_DIR="/opt/node-app"
+
+                        echo "Creating deploy directory if it doesn't exist..."
+                        sudo mkdir -p $DEPLOY_DIR
+                        sudo chown -R $USER:$USER $DEPLOY_DIR
+
+                        echo "Downloading artifact..."
+                        curl -H "Authorization: Bearer $TOKEN" -o $DEPLOY_DIR/$PACKAGE_NAME "$ARTIFACTORY_URL/$PACKAGE_NAME"
+
+                        echo "Stopping old Node.js process..."
+                        pkill -f "node server.js" || true
+
+                        echo "Extracting new build..."
+                        rm -rf $DEPLOY_DIR/app
+                        mkdir -p $DEPLOY_DIR/app
+                        tar -xzf $DEPLOY_DIR/$PACKAGE_NAME -C $DEPLOY_DIR/app
 
                         echo "Installing dependencies..."
+                        cd $DEPLOY_DIR/app
                         npm install
 
-                        echo "Starting app on port 3000..."
-                        nohup node server.js > app.log 2>&1 &
+                        echo "Starting Node.js server..."
+                        nohup node server.js > $DEPLOY_DIR/app.log 2>&1 &
                     '''
                 }
             }
         }
+
 
         stage('Smoke Test') {
             steps {
@@ -115,5 +130,9 @@ pipeline {
         failure {
             echo ' Deployment Failed'
         }
+        always {
+        echo 'Cleaning Jenkins workspace...'
+        cleanWs()
+    }
     }
 }
