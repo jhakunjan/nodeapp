@@ -95,28 +95,28 @@ pipeline {
                         if (params.DEPLOY_ENV == 'local') {
                             echo "Deploying to LOCAL environment..."
                             sh '''
-                                echo "Preparing deployment..."
-
                                 DEPLOY_DIR="/opt/node-app"
-
-                                echo "Downloading artifact..."
-                                curl -H "Authorization: Bearer $TOKEN" -o $DEPLOY_DIR/$PACKAGE_NAME "$ARTIFACTORY_URL/$PACKAGE_NAME"
 
                                 echo "Stopping old Node.js process..."
                                 pkill -f "node server.js" || true
-
+                            
+                                echo "Downloading artifact..."
+                                curl -H "Authorization: Bearer $TOKEN" -o $DEPLOY_DIR/$PACKAGE_NAME "$ARTIFACTORY_URL/$PACKAGE_NAME"
+                            
                                 echo "Extracting new build..."
                                 rm -rf $DEPLOY_DIR/app
                                 mkdir -p $DEPLOY_DIR/app
                                 tar -xzf $DEPLOY_DIR/$PACKAGE_NAME -C $DEPLOY_DIR/app
-
+                            
                                 echo "Installing dependencies..."
                                 cd $DEPLOY_DIR/app
                                 npm install
-
+                            
                                 echo "Starting Node.js server..."
-                                nohup node server.js & > $DEPLOY_DIR/app.log 2>&1 &
+                                nohup node server.js > $DEPLOY_DIR/app.log 2>&1 &
                             '''
+                            
+                               
                         } 
                         else {
                             error("Unknown deployment environment: ${params.DEPLOY_ENV}")
