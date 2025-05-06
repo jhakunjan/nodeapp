@@ -14,6 +14,9 @@ pipeline {
         ARTIFACTORY_REPO = 'sampleapp-npm'
         PACKAGE_NAME = "node-app-package.tar-0.0.${BUILD_NUMBER}.gz"
     }
+    parameters {
+        choice(name: 'DEPLOY_ENV', choices: ['local', 'cloud'], description: 'Where do you want to deploy?')
+    }
 
     stages {
         stage('Setup Node.js') {
@@ -80,38 +83,65 @@ pipeline {
 
         stage('Approval') {
             steps {
-                input message: 'Approve deployment to local environment?', ok: 'Deploy'
+                script {
+                    input message: "Approve deployment and select environment", parameters: [
+                        choice(name: 'DEPLOY_ENV', choices: ['local', 'cloud'], description: 'Choose deployment environment')
+                    ]
+                }
             }
         }
 
-        stage('Deploy Locally') {
+        stage('Deploy') {
             steps {
                 withCredentials([string(credentialsId: 'JF_ACCESS_TOKEN', variable: 'TOKEN')]) {
-                    sh '''
-                        echo "Preparing deployment..."
+                    script {
+                        if (params.DEPLOY_ENV == 'local') {
+                            echo "Deploying to LOCAL environment..."
+                            sh '''
+                                echo "Preparing deployment..."
 
-                        DEPLOY_DIR="/opt/node-app"
+                                DEPLOY_DIR="/opt/node-app"
 
-                        
-                        echo "Downloading artifact..."
-                        curl -H "Authorization: Bearer $TOKEN" -o $DEPLOY_DIR/$PACKAGE_NAME "$ARTIFACTORY_URL/$PACKAGE_NAME"
+                                echo "Downloading artifact..."
+                                curl -H "Authorization: Bearer $TOKEN" -o $DEPLOY_DIR/$PACKAGE_NAME "$ARTIFACTORY_URL/$PACKAGE_NAME"
 
-                        echo "Stopping old Node.js process..."
-                        pkill -f "node server.js" || true
+                                echo "Stopping old Node.js process..."
+                                pkill -f "node server.js" || true
 
-                        echo "Extracting new build..."
-                        rm -rf $DEPLOY_DIR/app
-                        mkdir -p $DEPLOY_DIR/app
-                        tar -xzf $DEPLOY_DIR/$PACKAGE_NAME -C $DEPLOY_DIR/app
+                                echo "Extracting new build..."
+                                rm -rf $DEPLOY_DIR/app
+                                mkdir -p $DEPLOY_DIR/app
+                                tar -xzf $DEPLOY_DIR/$PACKAGE_NAME -C $DEPLOY_DIR/app
 
-                        echo "Installing dependencies..."
-                        cd $DEPLOY_DIR/app
-                        npm install
+                                echo "Installing dependencies..."
+                                cd $DEPLOY_DIR/app
+                                npm install
 
-                        echo "Starting Node.js server..."
-                        nohup node server.js > $DEPLOY_DIR/app.log 2>&1 &
-                    '''
-                }
+                                echo "Starting Node.js server..."
+                                nohup node server.js > $DEPLOY_DIR/app.log 2>&1 &
+                            '''
+                        } 
+                        else if (params.DEPLOY_ENV == 'cloud') {
+                            echo "Deploying to CLOUD environment..."
+                            sh '''
+                                CLOUD_USER=azureuser
+                                CLOUD_HOST=your.cloud.vm.ip
+                                ARTIFACT_NAME="$PACKAGE_NAME"
+
+                                scp -o StrictHostKeyChecking=no $ARTIFACT_NAME $CLOUD_USER@$CLOUD_HOST:/tmp/
+                                ssh -o StrictHostKeyChecking=no $CLOUD_USER@$CLOUD_HOST << EOF
+                                    mkdir -p ~/node-app
+                                    tar -xzf /tmp/$ARTIFACT_NAME -C ~/node-app
+                                    cd ~/node-app
+                                    npm install
+                                    pkill -f "node server.js" || true
+                                    nohup node server.js > app.log 2>&1 &
+                                EOF
+                            '''
+                        }
+                         else {
+                            error("Unknown deployment environment: ${params.DEPLOY_ENV}")
+                        }
             }
         }
 
