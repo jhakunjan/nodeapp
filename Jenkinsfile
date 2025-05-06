@@ -23,19 +23,23 @@ pipeline {
             }
         }
 
-        stage('Unit Test') {
-            steps {
-                sh 'npm install --save-dev jest supertest'
-                sh 'npm test'
-                sh 'npm run coverage'
-            }
-        }
+        stage('Run tests'){
+            parallel{
+                stage('Unit Test') {
+                    steps {
+                        sh 'npm install --save-dev jest supertest'
+                        sh 'npm test'
+                        sh 'npm run coverage'
+                    }
+                }
 
-        stage('SonarQube Scan') {
-            steps {
-                sh 'npm install --save-dev sonar-scanner'
-                withSonarQubeEnv('SonarQubeServer') {
-                    sh 'npm run sonar'
+                stage('SonarQube Scan') {
+                    steps {
+                        sh 'npm install --save-dev sonar-scanner'
+                        withSonarQubeEnv('SonarQubeServer') {
+                            sh 'npm run sonar'
+                        }
+                    }
                 }
             }
         }
