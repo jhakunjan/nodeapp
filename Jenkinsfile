@@ -117,8 +117,8 @@ pipeline {
                                         sudo npm install
 
                                         echo "Starting Node.js server..."
-                                        sudo nohup node server.js > $REMOTE_DIR/app.log 2>&1 &
-                                    EOF
+                                        sudo nohup node server.js > $REMOTE_DIR/app/app.log 2>&1 &
+                                    << EOF
                                 '''
                                
                         }
