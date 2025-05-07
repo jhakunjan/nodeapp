@@ -121,6 +121,7 @@ pipeline {
                                     EOF
                                 '''
                                
+                        }
                         } 
                         else {
                             error("Unknown deployment environment: ${params.DEPLOY_ENV}")
