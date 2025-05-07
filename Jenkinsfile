@@ -13,6 +13,7 @@ pipeline {
         ARTIFACTORY_URL = 'https://trialbag95d.jfrog.io/artifactory/sampleapp-npm'
         ARTIFACTORY_REPO = 'sampleapp-npm'
         PACKAGE_NAME = "node-app-package.tar-0.0.${BUILD_NUMBER}.gz"
+        EC2_HOST = "ec2-43-204-234-162.ap-south-1.compute.amazonaws.com"
     }
 
     parameters {
@@ -94,28 +95,31 @@ pipeline {
                     script {
                         if (params.DEPLOY_ENV == 'local') {
                             echo "Deploying to LOCAL environment..."
-                            sh '''
-                                DEPLOY_DIR="/opt/node-app"
+                            sshagent(credentials: ['ssh_ec2_mumbai']) {
+                                sh '''
+                                    ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST << EOF
+                                        
+                                        REMOTE_DIR="/home/ubuntu/"
 
-                                echo "Stopping old Node.js process..."
-                                pkill -f "node server.js" || true
-                            
-                                echo "Downloading artifact..."
-                                curl -H "Authorization: Bearer $TOKEN" -o $DEPLOY_DIR/$PACKAGE_NAME "$ARTIFACTORY_URL/$PACKAGE_NAME"
-                            
-                                echo "Extracting new build..."
-                                rm -rf $DEPLOY_DIR/app
-                                mkdir -p $DEPLOY_DIR/app
-                                tar -xzf $DEPLOY_DIR/$PACKAGE_NAME -C $DEPLOY_DIR/app
-                            
-                                echo "Installing dependencies..."
-                                cd $DEPLOY_DIR/app
-                                npm install
-                            
-                                echo "Starting Node.js server..."
-                                nohup node server.js > $DEPLOY_DIR/app.log 2>&1 &
-                            '''
-                            
+                                        echo "Downloading artifact from Artifactory..."
+                                        curl -H "Authorization: Bearer $TOKEN" -o /tmp/$PACKAGE_NAME "$ARTIFACTORY_URL/$PACKAGE_NAME"
+
+                                        echo "Preparing deployment directory..."
+                                        pkill -f "node server.js" || true
+                                        rm -rf $REMOTE_DIR/app
+                                        mkdir -p $REMOTE_DIR/app
+
+                                        echo "Extracting artifact..."
+                                        tar -xzf /tmp/$PACKAGE_NAME -C $REMOTE_DIR/app
+
+                                        echo "Installing dependencies..."
+                                        cd $REMOTE_DIR/app
+                                        npm install
+
+                                        echo "Starting Node.js server..."
+                                        nohup node server.js > $REMOTE_DIR/app.log 2>&1 &
+                                    EOF
+                                '''
                                
                         } 
                         else {
