@@ -106,19 +106,19 @@ pipeline {
 
                                         echo "Preparing deployment directory..."
                                         pkill -f "node server.js" || true
-                                        sudo rm -rf $REMOTE_DIR/app
-                                        sudo mkdir -p $REMOTE_DIR/app
+                                        rm -rf $REMOTE_DIR/app
+                                        mkdir -p $REMOTE_DIR/app
 
                                         echo "Extracting artifact..."
-                                        sudo tar -xzf /tmp/$PACKAGE_NAME -C $REMOTE_DIR/app
+                                        tar -xzf /tmp/$PACKAGE_NAME -C $REMOTE_DIR/app
 
                                         echo "Installing dependencies..."
                                         cd $REMOTE_DIR/app
-                                        sudo npm install
+                                        npm install
 
                                         echo "Starting Node.js server..."
-                                        sudo nohup node server.js > $REMOTE_DIR/app/app.log 2>&1 &
-                                    << EOF
+                                        nohup node server.js > $REMOTE_DIR/app/app.log 2>&1 &
+                                    EOF
                                 '''
                                
                         }
