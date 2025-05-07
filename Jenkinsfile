@@ -107,7 +107,7 @@ pipeline {
                                         echo "Preparing deployment directory..."
                                         pkill -f "node server.js" || true
                                         rm -rf $REMOTE_DIR/app
-                                        mkdir -p $REMOTE_DIR/app
+                                        sudo mkdir -p $REMOTE_DIR/app
 
                                         echo "Extracting artifact..."
                                         tar -xzf /tmp/$PACKAGE_NAME -C $REMOTE_DIR/app
