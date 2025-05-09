@@ -96,15 +96,13 @@ pipeline {
                         if (params.DEPLOY_ENV == 'local') {
                             echo "Deploying to LOCAL environment..."
                                 sh '''
-                                    REMOTE_DIR="$WORKSPACE/app"
+                                    REMOTE_DIR="/opt/node-app"
 
                                     echo "Downloading artifact from Artifactory..."
                                     curl -H "Authorization: Bearer $TOKEN" -o /tmp/$PACKAGE_NAME "$ARTIFACTORY_URL/$PACKAGE_NAME"
 
                                     echo "Preparing deployment directory..."
                                     pkill -f "node server.js" || true
-                                    rm -rf "$REMOTE_DIR"
-                                    mkdir -p "$REMOTE_DIR"
 
                                     echo "Extracting artifact..."
                                     tar -xzf /tmp/$PACKAGE_NAME -C "$REMOTE_DIR"
@@ -135,7 +133,7 @@ pipeline {
             steps {
                 echo "Verifying app is accessible..."
                 sh 'curl --silent --fail http://localhost:3000/ || exit 1'
-                sleep(180)
+                sleep(10)
             }
         }
     }
