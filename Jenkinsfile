@@ -115,9 +115,11 @@ pipeline {
                                         echo "Installing dependencies..."
                                         cd $REMOTE_DIR/app
                                         npm install
-
-                                        echo "Starting Node.js server..."
-                                        nohup node server.js > $REMOTE_DIR/app/app.log 2>&1 &
+                                        echo "Installing PM2 and starting the app..."
+                                        npm install -g pm2
+                                        pm2 start server.js --name node-app
+                                        pm2 save
+                                        pm2 startup | tail -n 1 | bash
                                     EOF
                                 '''
                                
@@ -134,7 +136,7 @@ pipeline {
         stage('Smoke Test') {
             steps {
                 echo "Verifying app is accessible..."
-                sh 'curl --silent --fail http://localhost:3000/ || exit 1'
+                sh 'curl --silent --fail http://${EC2_HOST}:3000/ || exit 1'
                 sleep(180)
             }
         }
