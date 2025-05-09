@@ -95,7 +95,6 @@ pipeline {
                     script {
                         if (params.DEPLOY_ENV == 'local') {
                             echo "Deploying to LOCAL environment..."
-                            sshagent(credentials: ['ssh_ec2_mumbai']) {
                                 sh '''
                                     REMOTE_DIR="$WORKSPACE/app"
 
@@ -122,7 +121,7 @@ pipeline {
                                 '''                     
                              
                                
-                        }
+                        
                         } 
                         else {
                             error("Unknown deployment environment: ${params.DEPLOY_ENV}")
