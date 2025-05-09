@@ -1,0 +1,20 @@
+- name: Deploy html file
+  hosts: webservers
+  become: yes
+
+  tasks:
+    - name: Copy static HTML file to web root
+      copy:
+        src: files/index.html
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Ensure ownership and permissions are correct (in case manual override needed)
+      file:
+        path: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+        state: file

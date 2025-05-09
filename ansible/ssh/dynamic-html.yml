@@ -1,0 +1,39 @@
+---
+- name: Deploy dynamic web page
+  hosts: webservers
+  become: yes
+  gather_facts: yes
+
+  vars_files:
+    - group_vars/webservers.yml
+
+  tasks:
+    - name: Install web server
+      apt:
+        name: "{{ web_service }}"
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install web server on RedHat
+      yum:
+        name: "{{ web_service }}"
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Deploy templated index.html
+      template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+        force: yes
+      notify: Restart web service
+
+
+  handlers:
+    - name: Restart web service
+      service:
+        name: "{{ web_service }}"
+        state: restarted
