@@ -97,31 +97,30 @@ pipeline {
                             echo "Deploying to LOCAL environment..."
                             sshagent(credentials: ['ssh_ec2_mumbai']) {
                                 sh '''
-                                    ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST << EOF
-                                        
-                                        REMOTE_DIR="/home/ubuntu/"
+                                    REMOTE_DIR="$WORKSPACE/app"
 
-                                        echo "Downloading artifact from Artifactory..."
-                                        curl -H "Authorization: Bearer $TOKEN" -o /tmp/$PACKAGE_NAME "$ARTIFACTORY_URL/$PACKAGE_NAME"
+                                    echo "Downloading artifact from Artifactory..."
+                                    curl -H "Authorization: Bearer $TOKEN" -o /tmp/$PACKAGE_NAME "$ARTIFACTORY_URL/$PACKAGE_NAME"
 
-                                        echo "Preparing deployment directory..."
-                                        pkill -f "node server.js" || true
-                                        rm -rf $REMOTE_DIR/app
-                                        mkdir -p $REMOTE_DIR/app
+                                    echo "Preparing deployment directory..."
+                                    pkill -f "node server.js" || true
+                                    rm -rf "$REMOTE_DIR"
+                                    mkdir -p "$REMOTE_DIR"
 
-                                        echo "Extracting artifact..."
-                                        tar -xzf /tmp/$PACKAGE_NAME -C $REMOTE_DIR/app
+                                    echo "Extracting artifact..."
+                                    tar -xzf /tmp/$PACKAGE_NAME -C "$REMOTE_DIR"
 
-                                        echo "Installing dependencies..."
-                                        cd $REMOTE_DIR/app
-                                        npm install
-                                        echo "Installing PM2 and starting the app..."
-                                        npm install -g pm2
-                                        pm2 start server.js --name node-app
-                                        pm2 save
-                                        pm2 startup | tail -n 1 | bash
-                                    EOF
-                                '''
+                                    echo "Installing dependencies..."
+                                    cd "$REMOTE_DIR"
+                                    npm install
+
+                                    echo "Installing PM2 and starting the app..."
+                                    npm install -g pm2
+                                    pm2 start server.js --name node-app
+                                    pm2 save
+                                    pm2 startup | tail -n 1 | bash
+                                '''                     
+                             
                                
                         }
                         } 
@@ -136,7 +135,7 @@ pipeline {
         stage('Smoke Test') {
             steps {
                 echo "Verifying app is accessible..."
-                sh 'curl --silent --fail http://${EC2_HOST}:3000/ || exit 1'
+                sh 'curl --silent --fail http://localhost:3000/ || exit 1'
                 sleep(180)
             }
         }
