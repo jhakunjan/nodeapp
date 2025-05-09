@@ -145,9 +145,6 @@ pipeline {
         failure {
             echo 'Deployment Failed'
         }
-        always {
-            echo 'Cleaning Jenkins workspace...'
-            cleanWs()
-        }
+        
     }
 }
