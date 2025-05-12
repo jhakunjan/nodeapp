@@ -112,7 +112,6 @@ pipeline {
                                     npm install
 
                                     echo "Installing PM2 and starting the app..."
-                                    npm install -g pm2
                                     pm2 start server.js --name node-app
                                     pm2 save
                                     pm2 startup --no-sudo | tail -n 1 | bash
